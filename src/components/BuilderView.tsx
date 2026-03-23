@@ -1,0 +1,315 @@
+import { useState } from 'react';
+import {
+  Settings, TrendingUp, TrendingDown, Activity, Sliders,
+  Play, RotateCcw, Info, ChevronDown, DollarSign,
+} from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+
+interface BuilderViewProps {
+  setCurrentView: (v: string) => void;
+}
+
+export default function BuilderView({ setCurrentView }: BuilderViewProps) {
+  const [rsiPeriod, setRsiPeriod] = useState(14);
+  const [rsiBuy, setRsiBuy] = useState(30);
+  const [rsiSell, setRsiSell] = useState(70);
+  const [maShort, setMaShort] = useState(50);
+  const [maLong, setMaLong] = useState(200);
+  const [maType, setMaType] = useState('SMA');
+  const [useMA, setUseMA] = useState(true);
+  const [useRSI, setUseRSI] = useState(true);
+  const [initialCapital, setInitialCapital] = useState(10000);
+  const [tradingFee, setTradingFee] = useState(0.1);
+  const [stopLoss, setStopLoss] = useState(false);
+  const [stopLossPercent, setStopLossPercent] = useState(10);
+  const [takeProfit, setTakeProfit] = useState(false);
+  const [takeProfitPercent, setTakeProfitPercent] = useState(20);
+
+  const handleRunBacktest = () => {
+    setCurrentView('results');
+  };
+
+  const handleReset = () => {
+    setRsiPeriod(14);
+    setRsiBuy(30);
+    setRsiSell(70);
+    setMaShort(50);
+    setMaLong(200);
+    setMaType('SMA');
+    setUseMA(true);
+    setUseRSI(true);
+    setInitialCapital(10000);
+    setTradingFee(0.1);
+    setStopLoss(false);
+    setStopLossPercent(10);
+    setTakeProfit(false);
+    setTakeProfitPercent(20);
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto px-6 py-8 pb-12">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-100" style={{ fontFamily: 'Syne' }}>Strategy Builder</h1>
+        <p className="text-slate-400 mt-1">Configure your trading parameters and run a 20-year backtest against the S&P 500.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column - Indicators */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* RSI Config */}
+          <div className="bg-slate-900 border border-slate-700/50 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <div className="rounded-xl p-2.5 bg-indigo-500/15">
+                  <TrendingUp size={18} className="text-indigo-400" />
+                </div>
+                <div>
+                  <h2 className="text-slate-100 font-semibold">RSI (Relative Strength Index)</h2>
+                  <p className="text-slate-500 text-xs">Momentum oscillator · Buy low, sell high</p>
+                </div>
+              </div>
+              <Switch checked={useRSI} onCheckedChange={setUseRSI} />
+            </div>
+
+            <div className={`space-y-5 ${!useRSI ? 'opacity-40 pointer-events-none' : ''}`}>
+              <div>
+                <div className="flex justify-between mb-2">
+                  <label className="text-slate-400 text-sm">RSI Period</label>
+                  <span className="text-slate-200 text-sm font-medium">{rsiPeriod} days</span>
+                </div>
+                <Slider value={[rsiPeriod]} onValueChange={v => setRsiPeriod(v[0])} min={5} max={30} step={1} className="w-full" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <label className="text-slate-400 text-sm flex items-center gap-1">
+                      Buy Below <span className="text-emerald-400 text-xs">(Oversold)</span>
+                    </label>
+                    <span className="text-emerald-400 text-sm font-medium">{rsiBuy}</span>
+                  </div>
+                  <Slider value={[rsiBuy]} onValueChange={v => setRsiBuy(v[0])} min={10} max={50} step={1} />
+                </div>
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <label className="text-slate-400 text-sm flex items-center gap-1">
+                      Sell Above <span className="text-rose-400 text-xs">(Overbought)</span>
+                    </label>
+                    <span className="text-rose-400 text-sm font-medium">{rsiSell}</span>
+                  </div>
+                  <Slider value={[rsiSell]} onValueChange={v => setRsiSell(v[0])} min={50} max={95} step={1} />
+                </div>
+              </div>
+              <div className="bg-slate-800/50 rounded-xl p-3 flex items-start gap-2">
+                <Info size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
+                <p className="text-slate-500 text-xs leading-relaxed">
+                  Buy when RSI drops below {rsiBuy} (stock looks oversold). Sell when RSI rises above {rsiSell} (stock looks overbought).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Moving Average Config */}
+          <div className="bg-slate-900 border border-slate-700/50 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <div className="rounded-xl p-2.5 bg-cyan-500/15">
+                  <Activity size={18} className="text-cyan-400" />
+                </div>
+                <div>
+                  <h2 className="text-slate-100 font-semibold">Moving Average Crossover</h2>
+                  <p className="text-slate-500 text-xs">Trend-following · Golden Cross / Death Cross</p>
+                </div>
+              </div>
+              <Switch checked={useMA} onCheckedChange={setUseMA} />
+            </div>
+
+            <div className={`space-y-5 ${!useMA ? 'opacity-40 pointer-events-none' : ''}`}>
+              <div>
+                <label className="text-slate-400 text-sm mb-2 block">MA Type</label>
+                <Select value={maType} onValueChange={setMaType}>
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-200 w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value="SMA" className="text-slate-200">SMA (Simple)</SelectItem>
+                    <SelectItem value="EMA" className="text-slate-200">EMA (Exponential)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <label className="text-slate-400 text-sm">Short Period</label>
+                    <span className="text-cyan-400 text-sm font-medium">{maShort} days</span>
+                  </div>
+                  <Slider value={[maShort]} onValueChange={v => setMaShort(v[0])} min={10} max={100} step={5} />
+                </div>
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <label className="text-slate-400 text-sm">Long Period</label>
+                    <span className="text-cyan-400 text-sm font-medium">{maLong} days</span>
+                  </div>
+                  <Slider value={[maLong]} onValueChange={v => setMaLong(v[0])} min={100} max={400} step={10} />
+                </div>
+              </div>
+              <div className="bg-slate-800/50 rounded-xl p-3 flex items-start gap-2">
+                <Info size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
+                <p className="text-slate-500 text-xs leading-relaxed">
+                  Buy when the {maShort}-day {maType} crosses above the {maLong}-day {maType} (Golden Cross). Sell on the opposite (Death Cross).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Risk Management */}
+          <div className="bg-slate-900 border border-slate-700/50 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="rounded-xl p-2.5 bg-rose-500/15">
+                <TrendingDown size={18} className="text-rose-400" />
+              </div>
+              <div>
+                <h2 className="text-slate-100 font-semibold">Risk Management</h2>
+                <p className="text-slate-500 text-xs">Stop-loss and take-profit rules</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <Checkbox checked={stopLoss} onCheckedChange={(v) => setStopLoss(v as boolean)} />
+                  <div>
+                    <p className="text-slate-200 text-sm font-medium">Stop-Loss</p>
+                    <p className="text-slate-500 text-xs">Auto-sell if position drops by threshold</p>
+                  </div>
+                </div>
+                {stopLoss && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-400 text-sm font-medium">-{stopLossPercent}%</span>
+                    <Slider value={[stopLossPercent]} onValueChange={v => setStopLossPercent(v[0])} min={2} max={30} step={1} className="w-24" />
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <Checkbox checked={takeProfit} onCheckedChange={(v) => setTakeProfit(v as boolean)} />
+                  <div>
+                    <p className="text-slate-200 text-sm font-medium">Take-Profit</p>
+                    <p className="text-slate-500 text-xs">Auto-sell if position gains by threshold</p>
+                  </div>
+                </div>
+                {takeProfit && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-emerald-400 text-sm font-medium">+{takeProfitPercent}%</span>
+                    <Slider value={[takeProfitPercent]} onValueChange={v => setTakeProfitPercent(v[0])} min={5} max={50} step={1} className="w-24" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right column - Summary & Actions */}
+        <div className="space-y-6">
+          {/* Capital & Fees */}
+          <div className="bg-slate-900 border border-slate-700/50 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign size={18} className="text-indigo-400" />
+              <h2 className="text-slate-100 font-semibold">Capital & Fees</h2>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between mb-2">
+                  <label className="text-slate-400 text-sm">Starting Capital</label>
+                  <span className="text-slate-200 text-sm font-medium">${initialCapital.toLocaleString()}</span>
+                </div>
+                <Slider value={[initialCapital]} onValueChange={v => setInitialCapital(v[0])} min={1000} max={100000} step={1000} />
+              </div>
+              <div>
+                <div className="flex justify-between mb-2">
+                  <label className="text-slate-400 text-sm">Trading Fee (per trade)</label>
+                  <span className="text-slate-200 text-sm font-medium">{tradingFee}%</span>
+                </div>
+                <Slider value={[tradingFee * 10]} onValueChange={v => setTradingFee(v[0] / 10)} min={0} max={20} step={1} />
+              </div>
+            </div>
+          </div>
+
+          {/* Strategy Summary */}
+          <div className="bg-slate-900 border border-slate-700/50 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Sliders size={18} className="text-indigo-400" />
+              <h2 className="text-slate-100 font-semibold">Strategy Summary</h2>
+            </div>
+            <div className="space-y-3 text-sm">
+              {useRSI && (
+                <div className="flex justify-between py-2 border-b border-slate-800">
+                  <span className="text-slate-400">RSI</span>
+                  <span className="text-slate-200">Buy &lt;{rsiBuy}, Sell &gt;{rsiSell} ({rsiPeriod}d)</span>
+                </div>
+              )}
+              {useMA && (
+                <div className="flex justify-between py-2 border-b border-slate-800">
+                  <span className="text-slate-400">MA Cross</span>
+                  <span className="text-slate-200">{maType} {maShort}/{maLong}</span>
+                </div>
+              )}
+              {stopLoss && (
+                <div className="flex justify-between py-2 border-b border-slate-800">
+                  <span className="text-slate-400">Stop-Loss</span>
+                  <span className="text-rose-400">-{stopLossPercent}%</span>
+                </div>
+              )}
+              {takeProfit && (
+                <div className="flex justify-between py-2 border-b border-slate-800">
+                  <span className="text-slate-400">Take-Profit</span>
+                  <span className="text-emerald-400">+{takeProfitPercent}%</span>
+                </div>
+              )}
+              <div className="flex justify-between py-2 border-b border-slate-800">
+                <span className="text-slate-400">Capital</span>
+                <span className="text-slate-200">${initialCapital.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-slate-400">Fee</span>
+                <span className="text-slate-200">{tradingFee}%/trade</span>
+              </div>
+            </div>
+            {!useRSI && !useMA && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mt-4 flex items-start gap-2">
+                <Info size={14} className="text-amber-400 mt-0.5 flex-shrink-0" />
+                <p className="text-amber-200/80 text-xs">Enable at least one indicator to run a backtest.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-3">
+            <button
+              onClick={handleRunBacktest}
+              disabled={!useRSI && !useMA}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold py-3.5 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 text-sm shadow-[0_0_30px_rgba(99,102,241,0.2)]"
+            >
+              <Play size={16} /> Run Backtest
+            </button>
+            <button
+              onClick={handleReset}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 text-sm border border-slate-700"
+            >
+              <RotateCcw size={14} /> Reset to Defaults
+            </button>
+          </div>
+
+          {/* Tip */}
+          <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4">
+            <p className="text-indigo-200/80 text-xs leading-relaxed">
+              <strong className="text-indigo-300">Pro tip:</strong> The more parameters you tweak, the more likely you're overfitting to historical data. Simple strategies are usually more robust.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

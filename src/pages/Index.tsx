@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
@@ -7,28 +7,31 @@ import {
 import {
   ArrowDownLeft, ArrowUpRight, TrendingDown, TrendingUp, List,
   Activity, AlertTriangle, Gavel, PieChart, Info, Search,
-  ChevronRight, TrendingUp as TrendingUpIcon, Award, Shield,
-  Cpu, GitBranch, BarChart2, X, Lightbulb, Menu, XIcon,
+  ChevronRight, Award, Shield,
+  Cpu, GitBranch, BarChart2, X, Lightbulb, Menu, XIcon, LogIn,
 } from 'lucide-react';
 import {
   generateEquityData, tradeHistory, radarData, conceptCards,
   metricsStrategy, metricsSP500,
 } from '@/data/mockData';
+import LandingView from '@/components/LandingView';
+import BuilderView from '@/components/BuilderView';
+import AuthDialog from '@/components/AuthDialog';
 
-type ViewType = 'results' | 'learn';
+type ViewType = 'landing' | 'builder' | 'results' | 'learn';
 
 const iconMap: Record<string, React.ElementType> = {
   TrendingUp, Activity, TrendingDown, BarChart2, Cpu, Shield, GitBranch, AlertTriangle, Award,
 };
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<ViewType>('results');
+  const [currentView, setCurrentView] = useState<ViewType>('landing');
   const [metricTab, setMetricTab] = useState<'strategy' | 'sp500'>('strategy');
   const [expandedConcept, setExpandedConcept] = useState<string | null>(null);
   const [learnFilter, setLearnFilter] = useState('All');
   const [learnSearch, setLearnSearch] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  const [showAuth, setShowAuth] = useState(false);
   const equityData = useMemo(() => generateEquityData(), []);
   const metrics = metricTab === 'strategy' ? metricsStrategy : metricsSP500;
 
@@ -47,37 +50,50 @@ export default function App() {
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('landing')}>
             <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
               <BarChart2 size={16} className="text-white" strokeWidth={2.5} />
             </div>
             <span className="font-bold text-slate-100 text-lg" style={{ fontFamily: 'Syne' }}>BacktestIQ</span>
           </div>
           <div className="hidden md:flex items-center gap-1">
-            {(['results', 'learn'] as ViewType[]).map(v => (
+            {(['landing', 'builder', 'results', 'learn'] as ViewType[]).map(v => (
               <button key={v} onClick={() => setCurrentView(v)}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === v ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30' : 'text-slate-400 hover:text-slate-200'}`}>
-                {v === 'results' ? 'Results' : 'Learn'}
+                {v === 'landing' ? 'Home' : v === 'builder' ? 'Builder' : v === 'results' ? 'Results' : 'Learn'}
               </button>
             ))}
           </div>
-          <button className="md:hidden text-slate-400" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <XIcon size={20} /> : <Menu size={20} />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowAuth(true)} className="hidden md:flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors px-3 py-1.5 rounded-full border border-slate-700 hover:border-slate-600">
+              <LogIn size={14} /> Sign In
+            </button>
+            <button className="md:hidden text-slate-400" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? <XIcon size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-slate-800 bg-slate-950/95 backdrop-blur-xl px-6 py-3 flex flex-col gap-2">
-            {(['results', 'learn'] as ViewType[]).map(v => (
+            {(['landing', 'builder', 'results', 'learn'] as ViewType[]).map(v => (
               <button key={v} onClick={() => { setCurrentView(v); setMobileMenuOpen(false); }}
                 className={`px-4 py-2 rounded-xl text-sm font-medium text-left transition-all ${currentView === v ? 'bg-indigo-600/20 text-indigo-300' : 'text-slate-400'}`}>
-                {v === 'results' ? 'Results' : 'Learn'}
+                {v === 'landing' ? 'Home' : v === 'builder' ? 'Builder' : v === 'results' ? 'Results' : 'Learn'}
               </button>
             ))}
+            <button onClick={() => { setShowAuth(true); setMobileMenuOpen(false); }}
+              className="px-4 py-2 rounded-xl text-sm font-medium text-left text-indigo-400">
+              Sign In
+            </button>
           </div>
         )}
       </nav>
 
+      <AuthDialog open={showAuth} onClose={() => setShowAuth(false)} />
+
       <div className="relative z-10 pt-16">
+        {currentView === 'landing' && <LandingView setCurrentView={(v: string) => setCurrentView(v as ViewType)} setShowAuth={setShowAuth} />}
+        {currentView === 'builder' && <BuilderView setCurrentView={(v: string) => setCurrentView(v as ViewType)} />}
         {currentView === 'results' && <ResultsView equityData={equityData} metrics={metrics} metricTab={metricTab} setMetricTab={setMetricTab} setCurrentView={setCurrentView} />}
         {currentView === 'learn' && <LearnView concepts={filteredConcepts} filter={learnFilter} setFilter={setLearnFilter} search={learnSearch} setSearch={setLearnSearch} expandedCard={expandedCard} setExpandedConcept={setExpandedConcept} setCurrentView={setCurrentView} />}
       </div>
@@ -436,9 +452,9 @@ function LearnView({ concepts, filter, setFilter, search, setSearch, expandedCar
                   </div>
                 </div>
               )}
-              <button onClick={() => { setExpandedConcept(null); setCurrentView('results'); }}
+              <button onClick={() => { setExpandedConcept(null); setCurrentView('builder'); }}
                 className="w-full mt-8 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition-colors text-sm">
-                View Results →
+                Apply This in the Builder →
               </button>
             </div>
           </div>
