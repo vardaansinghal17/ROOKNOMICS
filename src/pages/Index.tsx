@@ -452,9 +452,9 @@ function LearnView({ concepts, filter, setFilter, search, setSearch, expandedCar
                   </div>
                 </div>
               )}
-              <button onClick={() => { setExpandedConcept(null); setCurrentView('results'); }}
+              <button onClick={() => { setExpandedConcept(null); setCurrentView('builder'); }}
                 className="w-full mt-8 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition-colors text-sm">
-                View Results →
+                Apply This in the Builder →
               </button>
             </div>
           </div>
