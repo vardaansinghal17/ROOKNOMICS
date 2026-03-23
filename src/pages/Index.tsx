@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
@@ -7,28 +7,31 @@ import {
 import {
   ArrowDownLeft, ArrowUpRight, TrendingDown, TrendingUp, List,
   Activity, AlertTriangle, Gavel, PieChart, Info, Search,
-  ChevronRight, TrendingUp as TrendingUpIcon, Award, Shield,
-  Cpu, GitBranch, BarChart2, X, Lightbulb, Menu, XIcon,
+  ChevronRight, Award, Shield,
+  Cpu, GitBranch, BarChart2, X, Lightbulb, Menu, XIcon, LogIn,
 } from 'lucide-react';
 import {
   generateEquityData, tradeHistory, radarData, conceptCards,
   metricsStrategy, metricsSP500,
 } from '@/data/mockData';
+import LandingView from '@/components/LandingView';
+import BuilderView from '@/components/BuilderView';
+import AuthDialog from '@/components/AuthDialog';
 
-type ViewType = 'results' | 'learn';
+type ViewType = 'landing' | 'builder' | 'results' | 'learn';
 
 const iconMap: Record<string, React.ElementType> = {
   TrendingUp, Activity, TrendingDown, BarChart2, Cpu, Shield, GitBranch, AlertTriangle, Award,
 };
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<ViewType>('results');
+  const [currentView, setCurrentView] = useState<ViewType>('landing');
   const [metricTab, setMetricTab] = useState<'strategy' | 'sp500'>('strategy');
   const [expandedConcept, setExpandedConcept] = useState<string | null>(null);
   const [learnFilter, setLearnFilter] = useState('All');
   const [learnSearch, setLearnSearch] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  const [showAuth, setShowAuth] = useState(false);
   const equityData = useMemo(() => generateEquityData(), []);
   const metrics = metricTab === 'strategy' ? metricsStrategy : metricsSP500;
 
