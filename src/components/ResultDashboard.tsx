@@ -1,7 +1,7 @@
-// src/components/ResultsDashboard.tsx
-import { PortfolioChart        } from './PortfolioChart'
-import { TradeMarkerChart      } from './TradeMarkerChart'
-import { MetricsComparisonChart} from './MetricsComparisonChart'
+import { PortfolioChart } from './PortfolioChart'
+import { TradeMarkerChart } from './TradeMarkerChart'
+import { MetricsComparisonChart } from './MetricsComparisonChart'
+import { Trophy, AlertTriangle } from 'lucide-react'
 
 interface SeriesDay { date: string; value: number }
 interface Trade     { date: string; action: 'BUY' | 'SELL'; price: number }
@@ -27,69 +27,58 @@ export function ResultsDashboard({
   const weWon = portfolioMetrics.totalReturn > benchmarkMetrics.totalReturn
 
   return (
-    <div style={{ padding: '2rem', maxWidth: 900, margin: '0 auto' }}>
-
+    <div className="max-w-6xl mx-auto px-6 py-12">
       {/* Verdict banner */}
-      <div style={{
-        padding: '1rem 1.5rem',
-        borderRadius: 12,
-        marginBottom: '2rem',
-        background: weWon ? '#E1F5EE' : '#FCEBEB',
-        color:      weWon ? '#085041' : '#501313',
-        fontWeight: 500,
-        fontSize: 16
-      }}>
-        {weWon
-          ? `Your strategy won — +${portfolioMetrics.totalReturn}% vs S&P 500's +${benchmarkMetrics.totalReturn}%`
-          : `S&P 500 won — your strategy returned +${portfolioMetrics.totalReturn}% vs index's +${benchmarkMetrics.totalReturn}%`
-        }
+      <div className={`p-6 md:p-8 rounded-[2.5rem] mb-10 flex flex-col md:flex-row md:items-center gap-6 border shadow-sm ${weWon ? 'bg-emerald-50 border-emerald-200/60' : 'bg-rose-50 border-rose-200/60'}`}>
+        <div className={`w-16 h-16 flex items-center justify-center rounded-[1.5rem] shrink-0 border ${weWon ? 'bg-white border-emerald-100 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.1)]' : 'bg-white border-rose-100 text-rose-600 shadow-[0_8px_16px_rgba(244,63,94,0.1)]'}`}>
+          {weWon ? <Trophy size={28} strokeWidth={1.5} /> : <AlertTriangle size={28} strokeWidth={1.5} />}
+        </div>
+        <div>
+          <h3 className={`text-2xl font-extrabold tracking-tight mb-2 ${weWon ? 'text-emerald-950' : 'text-rose-950'}`}>
+            {weWon ? 'Your strategy defeated the market.' : 'The index defeated your strategy.'}
+          </h3>
+          <p className={`text-lg font-medium ${weWon ? 'text-emerald-700' : 'text-rose-700'}`}>
+            {weWon
+              ? `You achieved +${portfolioMetrics.totalReturn}% return against the S&P 500's +${benchmarkMetrics.totalReturn}%.`
+              : `Your strategy returned +${portfolioMetrics.totalReturn}% against the S&P 500's +${benchmarkMetrics.totalReturn}%.`}
+          </p>
+        </div>
       </div>
 
       {/* Summary metric cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: '2rem' }}>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
         {[
-          { label: 'Your return',    value: `${portfolioMetrics.totalReturn}%`  },
-          { label: 'Index return',   value: `${benchmarkMetrics.totalReturn}%`  },
-          { label: 'Max drawdown',   value: `${portfolioMetrics.maxDrawdown}%`  },
-          { label: 'Total trades',   value: portfolioMetrics.totalTrades         },
+          { label: 'Your return', value: `+${portfolioMetrics.totalReturn}%`, highlight: true },
+          { label: 'Index return', value: `+${benchmarkMetrics.totalReturn}%` },
+          { label: 'Max drawdown', value: `${portfolioMetrics.maxDrawdown}%` },
+          { label: 'Total trades', value: portfolioMetrics.totalTrades },
         ].map(card => (
-          <div key={card.label} style={{
-            background: '#f5f4f0',
-            borderRadius: 8,
-            padding: '1rem',
-          }}>
-            <p style={{ fontSize: 12, color: '#5f5e5a', margin: '0 0 4px' }}>{card.label}</p>
-            <p style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>{card.value}</p>
+          <div key={card.label} className="bg-white border border-slate-200/80 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-shadow">
+            <p className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider">{card.label}</p>
+            <p className={`text-3xl md:text-4xl font-extrabold tracking-tight ${card.highlight ? 'text-indigo-600' : 'text-slate-900'}`}>{card.value}</p>
           </div>
         ))}
       </div>
 
-      {/* Chart 1 — Portfolio vs benchmark over time */}
-      <h2 style={{ fontSize: 15, fontWeight: 500, marginBottom: '1rem' }}>
-        Portfolio vs S&P 500 over time
-      </h2>
-      <PortfolioChart
-        portfolioSeries={portfolioSeries}
-        benchmarkSeries={benchmarkSeries}
-      />
+      {/* Charts Grid */}
+      <div className="space-y-8">
+        <div className="bg-white border border-slate-200/80 rounded-[2.5rem] p-8 shadow-sm">
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-8 tracking-tight">Portfolio vs S&P 500 Over Time</h2>
+          <PortfolioChart portfolioSeries={portfolioSeries} benchmarkSeries={benchmarkSeries} />
+        </div>
 
-      {/* Chart 2 — Trade markers */}
-      <h2 style={{ fontSize: 15, fontWeight: 500, margin: '2rem 0 1rem' }}>
-        When your strategy bought and sold
-      </h2>
-      <TradeMarkerChart
-        portfolioSeries={portfolioSeries}
-        tradeLog={tradeLog}
-      />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white border border-slate-200/80 rounded-[2.5rem] p-8 shadow-sm">
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-8 tracking-tight">When You Traded</h2>
+            <TradeMarkerChart portfolioSeries={portfolioSeries} tradeLog={tradeLog} />
+          </div>
 
-      {/* Chart 3 — Side by side metrics */}
-      <h2 style={{ fontSize: 15, fontWeight: 500, margin: '2rem 0 1rem' }}>
-        Performance comparison
-      </h2>
-      <MetricsComparisonChart
-        portfolioMetrics={portfolioMetrics}
-        benchmarkMetrics={benchmarkMetrics}
-      />
+          <div className="bg-white border border-slate-200/80 rounded-[2.5rem] p-8 shadow-sm">
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-8 tracking-tight">Performance Deep Dive</h2>
+            <MetricsComparisonChart portfolioMetrics={portfolioMetrics} benchmarkMetrics={benchmarkMetrics} />
+          </div>
+        </div>
+      </div>
 
     </div>
   )
