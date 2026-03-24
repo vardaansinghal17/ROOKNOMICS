@@ -54,7 +54,7 @@ export default function App() {
             <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
               <BarChart2 size={16} className="text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-bold text-slate-900 text-lg">BacktestIQ</span>
+            <span className="font-bold text-slate-900 text-lg">ROOKNOMICS</span>
           </div>
           <div className="hidden md:flex items-center gap-1">
             {(['landing', 'builder', 'results', 'learn'] as ViewType[]).map(v => (

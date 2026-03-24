@@ -33,7 +33,7 @@ export default function AuthDialog({ open, onClose }: AuthDialogProps) {
                 <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
                   <BarChart2 size={16} className="text-white" />
                 </div>
-                <span className="font-bold text-slate-900 text-lg">BacktestIQ</span>
+                <span className="font-bold text-slate-900 text-lg">ROOKNOMICS</span>
               </div>
               <button onClick={onClose} className="text-slate-600 hover:text-slate-800 transition-colors p-1">
                 <X size={20} />
