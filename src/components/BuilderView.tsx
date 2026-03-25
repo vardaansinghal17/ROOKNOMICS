@@ -7,12 +7,11 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { apiRequest } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { runBacktest } from '@/store/backtestSlice';
 import { clearBacktest } from '@/store/backtestSlice';
-import { useDispatch, useSelector } from 'react-redux'
-import type { RootState, AppDispatch } from '../store/index'
+import { useDispatch } from 'react-redux'
+import type { AppDispatch } from '../store/index'
 
 interface BuilderViewProps {
   setCurrentView: (v: string) => void;
@@ -45,7 +44,6 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
   const dispatch = useDispatch<AppDispatch>()
 
   
-
    const handleRunBacktest = async () => {
      const activeRules=[]
      if (useMA) {
@@ -79,20 +77,13 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
         "activeRules": activeRules,
         "rulesConfig": rulesConfig
       }
-    dispatch(runBacktest({...result}))
+    dispatch(clearBacktest())
     try {
-      const data = await apiRequest("/backtest", {
-        method: "POST",
-        body: JSON.stringify(result),
-      });
-      console.log(data)
-      // If backend returns token
-      
-    } catch (err: any) {
-      console.log(err)
-    } 
-
-    setCurrentView('results');
+      await dispatch(runBacktest({ ...result })).unwrap()
+      setCurrentView('results')
+    } catch (err) {
+      console.error('Backtest failed', err)
+    }
   };
 
   const handleReset = () => {
