@@ -22,6 +22,7 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
   const [rsiSell, setRsiSell] = useState(70);
   const [maShort, setMaShort] = useState(50);
   const [maLong, setMaLong] = useState(200);
+  const [maType, setMaType] = useState('SMA');
   const [useMA, setUseMA] = useState(true);
   const [useRSI, setUseRSI] = useState(true);
   const [initialCapital, setInitialCapital] = useState(10000);
@@ -50,6 +51,7 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
     setRsiSell(70);
     setMaShort(50);
     setMaLong(200);
+    setMaType('SMA');
     setUseMA(true);
     setUseRSI(true);
     setInitialCapital(10000);
@@ -175,7 +177,26 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
             </div>
 
             <div className={`space-y-5 ${!useMA ? 'opacity-40 pointer-events-none' : ''}`}>
-              <p className="text-slate-500 text-xs leading-relaxed">Using Simple Moving Average (SMA)</p>
+              <div>
+                <label className="text-slate-600 text-sm mb-2 block">MA Type</label>
+                <Select value={maType} onValueChange={setMaType}>
+                  <SelectTrigger className="bg-slate-100 border-slate-200 text-slate-800 w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-100 border-slate-200">
+                    <SelectItem value="SMA" className="text-slate-800">SMA (Simple)</SelectItem>
+                    <SelectItem value="EMA" className="text-slate-800">EMA (Exponential)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="bg-slate-100/50 rounded-xl p-3 flex items-start gap-2 mt-3">
+                  <Info size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-slate-500 text-xs leading-relaxed">
+                    {maType === 'SMA' 
+                      ? 'Gives equal weight to all days in the period. Slower to react, less noise.' 
+                      : 'Gives more weight to recent days. Reacts faster to price changes, more sensitive.'}
+                  </p>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="flex justify-between mb-2">
@@ -195,7 +216,7 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
               <div className="bg-slate-100/50 rounded-xl p-3 flex items-start gap-2">
                 <Info size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
                 <p className="text-slate-500 text-xs leading-relaxed">
-                  Buy when the {maShort}-day SMA crosses above the {maLong}-day SMA (Golden Cross). Sell on the opposite (Death Cross).
+                  Buy when the {maShort}-day {maType} crosses above the {maLong}-day {maType} (Golden Cross). Sell on the opposite (Death Cross).
                 </p>
               </div>
             </div>
@@ -291,7 +312,7 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
               {useMA && (
                 <div className="flex justify-between py-2 border-b border-slate-200">
                   <span className="text-slate-600">MA Cross</span>
-                  <span className="text-slate-800">SMA {maShort}/{maLong}</span>
+                  <span className="text-slate-800">{maType} {maShort}/{maLong}</span>
                 </div>
               )}
               {stopLoss && (
