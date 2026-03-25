@@ -41,7 +41,51 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
 
   
 
-  const handleRunBacktest = () => {
+   const handleRunBacktest = async () => {
+    const activeRules=[]
+    if (useMA) {
+      activeRules.push("MA Crossover") 
+    }
+    if (useRSI) {
+      activeRules.push("RSI Entry") 
+    }
+    if (stopLoss) {
+      activeRules.push("Stop Loss") 
+    }
+    const rulesConfig={
+      "rsi":{
+        "enabled": useRSI,
+        "period": rsiPeriod,
+        "buyBelow": rsiBuy,
+        "sellAbove": rsiSell
+      },
+      "maCross":{
+        "enabled": useMA,
+        "type": maType,
+        "fastPeriod": maShort,
+        "slowPeriod": maLong
+      }
+    }
+    const result= {
+      "symbol":symbol,
+      "startDate": startDate,
+      "endDate":endDate,
+      "capital":initialCapital,
+      "activeRules": activeRules,
+      "rulesConfig": rulesConfig
+    }
+    try {
+      const data = await apiRequest("/backtest", {
+        method: "POST",
+        body: JSON.stringify(result),
+      });
+      console.log(data)
+      // If backend returns token
+      
+    } catch (err: any) {
+      console.log(err)
+    } 
+
     setCurrentView('results');
   };
 
