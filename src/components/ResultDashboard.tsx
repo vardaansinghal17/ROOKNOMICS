@@ -4,13 +4,13 @@ import { MetricsComparisonChart } from './MetricsComparisonChart'
 import { Trophy, AlertTriangle } from 'lucide-react'
 
 interface SeriesDay { date: string; value: number }
-interface Trade     { date: string; action: 'BUY' | 'SELL'; price: number }
-interface Metrics   { totalReturn: number; maxDrawdown: number; sharpeRatio: number; totalTrades: number }
+interface Trade { date: string; action: 'BUY' | 'SELL'; price: number }
+interface Metrics { totalReturn: number; maxDrawdown: number; sharpeRatio: number; totalTrades: number }
 
 interface Props {
-  portfolioSeries:  SeriesDay[]
-  benchmarkSeries:  SeriesDay[]
-  tradeLog:         Trade[]
+  portfolioSeries: SeriesDay[]
+  benchmarkSeries: SeriesDay[]
+  tradeLog: Trade[]
   portfolioMetrics: Metrics
   benchmarkMetrics: Metrics
 }
