@@ -35,7 +35,7 @@ const features = [
 ];
 
 const testimonials = [
-  { name: 'Alex M.', role: 'Retail Investor', text: 'I was convinced my RSI strategy was genius. BacktestIQ showed me the S&P beat it by 285 percentage points. Humbling, but it saved me thousands in potential mistakes.', stars: 5 },
+  { name: 'Alex M.', role: 'Retail Investor', text: 'I was convinced my RSI strategy was genius. ROOKNOMICS showed me the S&P beat it by 285 percentage points. Humbling, but it saved me thousands in potential mistakes.', stars: 5 },
   { name: 'Sarah K.', role: 'Finance Student', text: 'The Learning Hub alone is worth it. Finally understood Sharpe ratios and why passive investing wins.', stars: 5 },
   { name: 'David L.', role: 'Day Trader', text: 'Painful truth delivered beautifully. The verdict panel hits different when you see your strategy vs the index.', stars: 4 },
 ];
@@ -97,7 +97,7 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
                   <div className="w-3 h-3 rounded-full bg-rose-400" />
                   <div className="w-3 h-3 rounded-full bg-amber-400" />
                   <div className="w-3 h-3 rounded-full bg-emerald-400" />
-                  <span className="text-slate-400 text-xs font-medium ml-2 tracking-wide">backtestiq.app</span>
+                  <span className="text-slate-400 text-xs font-medium ml-2 tracking-wide">ROOKNOMICS.app</span>
                 </div>
               </div>
               <div className="flex justify-between items-end mb-6">
@@ -287,7 +287,7 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
             <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-sm">
               <BarChart2 size={16} className="text-white" strokeWidth={2.5} />
             </div>
-            <span className="text-slate-600 font-bold text-sm tracking-wide">BacktestIQ © 2024</span>
+            <span className="text-slate-600 font-bold text-sm tracking-wide">ROOKNOMICS © 2024</span>
           </div>
           <div className="flex gap-8 text-slate-500 text-sm font-medium">
             <button onClick={() => setCurrentView('learn')} className="hover:text-indigo-600 transition-colors">Learning Hub</button>

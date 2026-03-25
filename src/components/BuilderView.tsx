@@ -8,21 +8,31 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { apiRequest } from '@/lib/api';
+import { Input } from '@/components/ui/input';
+
 interface BuilderViewProps {
   setCurrentView: (v: string) => void;
 }
 
 export default function BuilderView({ setCurrentView }: BuilderViewProps) {
+  const [symbol, setSymbol] = useState('AAPL');
+  const [startDate, setStartDate] = useState('2015-01-01');
+  const [endDate, setEndDate] = useState('2023-12-31');
   const [rsiPeriod, setRsiPeriod] = useState(14);
   const [rsiBuy, setRsiBuy] = useState(30);
   const [rsiSell, setRsiSell] = useState(70);
   const [maShort, setMaShort] = useState(50);
   const [maLong, setMaLong] = useState(200);
-  const [maType, setMaType] = useState('SMA');
   const [useMA, setUseMA] = useState(true);
   const [useRSI, setUseRSI] = useState(true);
   const [initialCapital, setInitialCapital] = useState(10000);
-  const [tradingFee, setTradingFee] = useState(0.1);
+
+  const formatMonthYear = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
   const [stopLoss, setStopLoss] = useState(false);
   const [stopLossPercent, setStopLossPercent] = useState(10);
   const [takeProfit, setTakeProfit] = useState(false);
@@ -35,16 +45,17 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
   };
 
   const handleReset = () => {
+    setSymbol('AAPL');
+    setStartDate('2015-01-01');
+    setEndDate('2023-12-31');
     setRsiPeriod(14);
     setRsiBuy(30);
     setRsiSell(70);
     setMaShort(50);
     setMaLong(200);
-    setMaType('SMA');
     setUseMA(true);
     setUseRSI(true);
     setInitialCapital(10000);
-    setTradingFee(0.1);
     setStopLoss(false);
     setStopLossPercent(10);
     setTakeProfit(false);
@@ -61,6 +72,44 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column - Indicators */}
         <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
+            <label className="text-slate-900 font-semibold text-sm mb-2 block">Stock Symbol</label>
+            <Input 
+              type="text"
+              value={symbol}
+              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+              placeholder="e.g. AAPL, GOOGL, TSLA" 
+              className="uppercase"
+            />
+            <p className="text-slate-500 text-xs mt-2">Enter any valid US stock ticker symbol</p>
+          </div>
+
+          <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-slate-900 font-semibold text-sm mb-2 block">Start Date</label>
+                <Input 
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-slate-900 font-semibold text-sm mb-2 block">End Date</label>
+                <Input 
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            {startDate && endDate && (
+              <p className="text-slate-500 text-xs mt-3">
+                Approx. {Math.max(0, Math.floor((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24) * 5 / 7)).toLocaleString()} trading days
+              </p>
+            )}
+          </div>
+
           {/* RSI Config */}
           <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-5">
@@ -129,18 +178,7 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
             </div>
 
             <div className={`space-y-5 ${!useMA ? 'opacity-40 pointer-events-none' : ''}`}>
-              <div>
-                <label className="text-slate-600 text-sm mb-2 block">MA Type</label>
-                <Select value={maType} onValueChange={setMaType}>
-                  <SelectTrigger className="bg-slate-100 border-slate-200 text-slate-800 w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-100 border-slate-200">
-                    <SelectItem value="SMA" className="text-slate-800">SMA (Simple)</SelectItem>
-                    <SelectItem value="EMA" className="text-slate-800">EMA (Exponential)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <p className="text-slate-500 text-xs leading-relaxed">Using Simple Moving Average (SMA)</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="flex justify-between mb-2">
@@ -160,7 +198,7 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
               <div className="bg-slate-100/50 rounded-xl p-3 flex items-start gap-2">
                 <Info size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
                 <p className="text-slate-500 text-xs leading-relaxed">
-                  Buy when the {maShort}-day {maType} crosses above the {maLong}-day {maType} (Golden Cross). Sell on the opposite (Death Cross).
+                  Buy when the {maShort}-day SMA crosses above the {maLong}-day SMA (Golden Cross). Sell on the opposite (Death Cross).
                 </p>
               </div>
             </div>
@@ -229,13 +267,6 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
                 </div>
                 <Slider value={[initialCapital]} onValueChange={v => setInitialCapital(v[0])} min={1000} max={100000} step={1000} />
               </div>
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-slate-600 text-sm">Trading Fee (per trade)</label>
-                  <span className="text-slate-800 text-sm font-medium">{tradingFee}%</span>
-                </div>
-                <Slider value={[tradingFee * 10]} onValueChange={v => setTradingFee(v[0] / 10)} min={0} max={20} step={1} />
-              </div>
             </div>
           </div>
 
@@ -246,6 +277,14 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
               <h2 className="text-slate-900 font-semibold">Strategy Summary</h2>
             </div>
             <div className="space-y-3 text-sm">
+              <div className="flex justify-between py-2 border-b border-slate-200">
+                <span className="text-slate-600">Symbol</span>
+                <span className="text-slate-800">{symbol || '—'}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-slate-200">
+                <span className="text-slate-600">Period</span>
+                <span className="text-slate-800">{startDate && endDate ? `${formatMonthYear(startDate)} — ${formatMonthYear(endDate)}` : '—'}</span>
+              </div>
               {useRSI && (
                 <div className="flex justify-between py-2 border-b border-slate-200">
                   <span className="text-slate-600">RSI</span>
@@ -255,7 +294,7 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
               {useMA && (
                 <div className="flex justify-between py-2 border-b border-slate-200">
                   <span className="text-slate-600">MA Cross</span>
-                  <span className="text-slate-800">{maType} {maShort}/{maLong}</span>
+                  <span className="text-slate-800">SMA {maShort}/{maLong}</span>
                 </div>
               )}
               {stopLoss && (
@@ -270,13 +309,9 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
                   <span className="text-emerald-600">+{takeProfitPercent}%</span>
                 </div>
               )}
-              <div className="flex justify-between py-2 border-b border-slate-200">
+              <div className="flex justify-between py-2">
                 <span className="text-slate-600">Capital</span>
                 <span className="text-slate-800">${initialCapital.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-slate-600">Fee</span>
-                <span className="text-slate-800">{tradingFee}%/trade</span>
               </div>
             </div>
             {!useRSI && !useMA && (
@@ -291,7 +326,7 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
           <div className="space-y-3">
             <button
               onClick={handleRunBacktest}
-              disabled={!useRSI && !useMA}
+              disabled={(!useRSI && !useMA) || !symbol || !startDate || !endDate}
               className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 disabled:text-slate-500 text-white font-semibold py-3.5 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 text-sm shadow-[0_0_30px_rgba(99,102,241,0.2)]"
             >
               <Play size={16} /> Run Backtest
