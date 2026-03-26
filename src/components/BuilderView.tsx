@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { fadeUp, staggerContainer } from '@/lib/animations';
 import {
   Settings, TrendingUp, TrendingDown, Activity, Sliders,
   Play, RotateCcw, Info, ChevronDown, DollarSign,
@@ -63,31 +65,41 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8 pb-12">
-      <div className="mb-8">
+      <motion.div 
+        className="mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <h1 className="text-3xl font-bold text-slate-900">Strategy Builder</h1>
         <p className="text-slate-600 mt-1">Configure your trading parameters and run a 20-year backtest against the S&P 500.</p>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
         {/* Left column - Indicators */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
+          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
             <label className="text-slate-900 font-semibold text-sm mb-2 block">Stock Symbol</label>
-            <Input 
+            <Input
               type="text"
               value={symbol}
               onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              placeholder="e.g. AAPL, GOOGL, TSLA" 
+              placeholder="e.g. AAPL, GOOGL, TSLA"
               className="uppercase"
             />
             <p className="text-slate-500 text-xs mt-2">Enter any valid US stock ticker symbol</p>
-          </div>
+          </motion.div>
 
-          <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
+          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-slate-900 font-semibold text-sm mb-2 block">Start Date</label>
-                <Input 
+                <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
@@ -95,7 +107,7 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
               </div>
               <div>
                 <label className="text-slate-900 font-semibold text-sm mb-2 block">End Date</label>
-                <Input 
+                <Input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
@@ -107,10 +119,10 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
                 Approx. {Math.max(0, Math.floor((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24) * 5 / 7)).toLocaleString()} trading days
               </p>
             )}
-          </div>
+          </motion.div>
 
           {/* RSI Config */}
-          <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
+          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <div className="rounded-xl p-2.5 bg-indigo-100">
@@ -159,10 +171,10 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Moving Average Config */}
-          <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
+          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <div className="rounded-xl p-2.5 bg-cyan-100">
@@ -191,8 +203,8 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
                 <div className="bg-slate-100/50 rounded-xl p-3 flex items-start gap-2 mt-3">
                   <Info size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
                   <p className="text-slate-500 text-xs leading-relaxed">
-                    {maType === 'SMA' 
-                      ? 'Gives equal weight to all days in the period. Slower to react, less noise.' 
+                    {maType === 'SMA'
+                      ? 'Gives equal weight to all days in the period. Slower to react, less noise.'
                       : 'Gives more weight to recent days. Reacts faster to price changes, more sensitive.'}
                   </p>
                 </div>
@@ -220,10 +232,10 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Risk Management */}
-          <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
+          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-5">
               <div className="rounded-xl p-2.5 bg-rose-100">
                 <TrendingDown size={18} className="text-rose-600" />
@@ -266,13 +278,13 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Right column - Summary & Actions */}
         <div className="space-y-6">
           {/* Capital & Fees */}
-          <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
+          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <DollarSign size={18} className="text-indigo-600" />
               <h2 className="text-slate-900 font-semibold">Capital & Fees</h2>
@@ -286,10 +298,10 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
                 <Slider value={[initialCapital]} onValueChange={v => setInitialCapital(v[0])} min={1000} max={100000} step={1000} />
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Strategy Summary */}
-          <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
+          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <Sliders size={18} className="text-indigo-600" />
               <h2 className="text-slate-900 font-semibold">Strategy Summary</h2>
@@ -338,10 +350,10 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
                 <p className="text-amber-800/80 text-xs">Enable at least one indicator to run a backtest.</p>
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* Actions */}
-          <div className="space-y-3">
+          <motion.div variants={fadeUp} className="space-y-3">
             <button
               onClick={handleRunBacktest}
               disabled={(!useRSI && !useMA) || !symbol || !startDate || !endDate}
@@ -355,16 +367,16 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
             >
               <RotateCcw size={14} /> Reset to Defaults
             </button>
-          </div>
+          </motion.div>
 
           {/* Tip */}
-          <div className="bg-indigo-500/10 border border-indigo-200 rounded-xl p-4">
+          <motion.div variants={fadeUp} className="bg-indigo-500/10 border border-indigo-200 rounded-xl p-4">
             <p className="text-indigo-800/80 text-xs leading-relaxed">
               <strong className="text-indigo-700">Pro tip:</strong> The more parameters you tweak, the more likely you're overfitting to historical data. Simple strategies are usually more robust.
             </p>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
