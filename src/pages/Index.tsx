@@ -746,7 +746,15 @@ export default function App() {
 
           <div className="hidden md:flex items-center gap-1">
             {(['landing', 'builder', 'results', 'news', 'learn'] as ViewType[]).map(v => (
-              <button key={v} onClick={() => setCurrentView(v)}
+              <button key={v} onClick={() => {
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                  setShowAuth(true);
+                } else {
+                  setCurrentView(v);
+                }
+              }}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === v ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-slate-600 hover:text-slate-800'}`}>
                 {v === 'landing' ? 'Home' : v === 'builder' ? 'Builder' : v === 'results' ? 'Results' : v === 'news' ? 'News' : 'Learn'}
               </button>

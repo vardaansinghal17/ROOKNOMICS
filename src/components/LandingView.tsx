@@ -60,7 +60,7 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
 
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-6 pt-20 pb-16 lg:pt-32 lg:pb-24">
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center"
           variants={staggerContainer}
           initial="hidden"
@@ -80,13 +80,29 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
             </motion.p>
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4">
               <button
-                onClick={() => setCurrentView('builder')}
+                onClick={() => {
+                  const token = localStorage.getItem("token");
+                  console.log("Token on button click:", token); // Debug log
+                  if (!token) {
+                    setShowAuth(true); // open signup/login popup
+                  } else {
+                    setCurrentView('builder');
+                  }
+                }}
                 className="bg-indigo-600 hover:bg-indigo-700 hover:-translate-y-0.5 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-base shadow-lg shadow-indigo-600/20"
               >
                 Build Your Strategy <ArrowRight size={18} />
               </button>
               <button
-                onClick={() => setCurrentView('results')}
+                onClick={() => {
+                  const token = localStorage.getItem("token");
+
+                  if (!token) {
+                    setShowAuth(true);
+                  } else {
+                    setCurrentView('results');
+                  }
+                }}
                 className="bg-white hover:bg-slate-50 text-slate-800 font-bold px-8 py-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-base border-2 border-slate-200 hover:border-slate-300 shadow-sm"
               >
                 <Play size={16} className="text-indigo-600" /> See How It Looks
@@ -163,7 +179,7 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
 
       {/* Features - Bento Box Style */}
       <section className="max-w-7xl mx-auto px-6 py-24 relative z-10">
-        <motion.div 
+        <motion.div
           className="mb-16 text-center lg:text-left lg:max-w-2xl"
           variants={fadeUp}
           initial="hidden"
@@ -178,7 +194,7 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
           </p>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 lg:grid-cols-3 gap-6 grid-flow-row-dense"
           variants={staggerContainer}
           initial="hidden"
@@ -210,7 +226,7 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
 
       {/* How it works - Vertical Stepper */}
       <section className="bg-slate-50/50 border-y border-slate-200 py-24 relative z-10">
-        <motion.div 
+        <motion.div
           className="max-w-6xl mx-auto px-6"
           variants={staggerContainer}
           initial="hidden"
@@ -231,21 +247,21 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
               {/* Connecting line */}
               <div className="hidden md:block absolute left-[31px] top-6 bottom-6 w-[2px] bg-gradient-to-b from-indigo-200 via-rose-200 to-emerald-200" />
 
-            {[
-              { step: '1', title: 'Configure Your Strategy', desc: 'Set RSI thresholds, moving average crossover periods, and risk management parameters without writing a single line of code.' },
-              { step: '2', title: 'Run the Backtest', desc: 'We instantly simulate your specific strategy against 20 years of S&P 500 historical data, accounting for trading fees.' },
-              { step: '3', title: 'Face the Verdict', desc: 'See exactly how your strategy compares to a simple buy-and-hold indexing approach in a side-by-side performance review.' },
-            ].map((s, i) => (
-              <motion.div variants={fadeUp} key={i} className="relative flex flex-col md:flex-row gap-6 md:gap-10 mb-16 last:mb-0 group">
-                <div className="w-16 h-16 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-center flex-shrink-0 z-10 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:border-indigo-400 group-hover:shadow-indigo-500/20">
-                  <span className="text-indigo-600 font-black text-xl">{s.step}</span>
-                </div>
-                <div className="pt-3 bg-white px-8 py-6 rounded-3xl border border-slate-200/60 shadow-sm flex-1 hover:shadow-md transition-shadow">
-                  <h3 className="text-xl text-slate-900 font-bold mb-3 tracking-tight">{s.title}</h3>
-                  <p className="text-slate-600 text-base leading-relaxed">{s.desc}</p>
-                </div>
-              </motion.div>
-            ))}
+              {[
+                { step: '1', title: 'Configure Your Strategy', desc: 'Set RSI thresholds, moving average crossover periods, and risk management parameters without writing a single line of code.' },
+                { step: '2', title: 'Run the Backtest', desc: 'We instantly simulate your specific strategy against 20 years of S&P 500 historical data, accounting for trading fees.' },
+                { step: '3', title: 'Face the Verdict', desc: 'See exactly how your strategy compares to a simple buy-and-hold indexing approach in a side-by-side performance review.' },
+              ].map((s, i) => (
+                <motion.div variants={fadeUp} key={i} className="relative flex flex-col md:flex-row gap-6 md:gap-10 mb-16 last:mb-0 group">
+                  <div className="w-16 h-16 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-center flex-shrink-0 z-10 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:border-indigo-400 group-hover:shadow-indigo-500/20">
+                    <span className="text-indigo-600 font-black text-xl">{s.step}</span>
+                  </div>
+                  <div className="pt-3 bg-white px-8 py-6 rounded-3xl border border-slate-200/60 shadow-sm flex-1 hover:shadow-md transition-shadow">
+                    <h3 className="text-xl text-slate-900 font-bold mb-3 tracking-tight">{s.title}</h3>
+                    <p className="text-slate-600 text-base leading-relaxed">{s.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
         </motion.div>
@@ -253,7 +269,7 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
 
       {/* Testimonials - Marquee Scroll */}
       <section className="py-16 pb-12 relative z-10 overflow-hidden bg-slate-50/50 border-t border-slate-200/50">
-        <motion.div 
+        <motion.div
           className="mb-12 text-center max-w-7xl mx-auto px-6"
           variants={fadeUp}
           initial="hidden"
@@ -299,7 +315,7 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
 
       {/* CTA Layered */}
       <section className="px-6 py-8 relative z-10 pt-16">
-        <motion.div 
+        <motion.div
           className="max-w-4xl mx-auto bg-slate-100 rounded-[3rem] p-10 lg:p-16 text-center relative overflow-hidden shadow-xl shadow-slate-200/50 border-2 border-white backdrop-blur-sm"
           variants={fadeUp}
           initial="hidden"
@@ -316,7 +332,15 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
               Most strategies look great on paper. Find out if yours survives 20 years of real market conditions.
             </p>
             <button
-              onClick={() => setCurrentView('builder')}
+              onClick={() => {
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                  setShowAuth(true);
+                } else {
+                  setCurrentView('builder');
+                }
+              }}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-10 py-5 rounded-2xl transition-all duration-300 text-lg shadow-[0_0_20px_rgba(99,102,241,0.2)] hover:shadow-[0_0_30px_rgba(99,102,241,0.3)] inline-flex items-center gap-3 hover:-translate-y-1"
             >
               Start Building Now <ArrowRight size={20} />
@@ -335,9 +359,33 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
             <span className="text-slate-600 font-bold text-sm tracking-wide">ROOKNOMICS © 2024</span>
           </div>
           <div className="flex gap-8 text-slate-500 text-sm font-medium">
-            <button onClick={() => setCurrentView('learn')} className="hover:text-indigo-600 transition-colors">Learning Hub</button>
-            <button onClick={() => setCurrentView('builder')} className="hover:text-indigo-600 transition-colors">Strategy Builder</button>
-            <button onClick={() => setCurrentView('results')} className="hover:text-indigo-600 transition-colors">Demo Results</button>
+            <button onClick={() => {
+              const token = localStorage.getItem("token");
+
+              if (!token) {
+                setShowAuth(true);
+              } else {
+                setCurrentView('learn');
+              }
+            }} className="hover:text-indigo-600 transition-colors">Learning Hub</button>
+            <button onClick={() => {
+              const token = localStorage.getItem("token");
+
+              if (!token) {
+                setShowAuth(true);
+              } else {
+                setCurrentView('builder');
+              }
+            }} className="hover:text-indigo-600 transition-colors">Strategy Builder</button>
+            <button onClick={() => {
+              const token = localStorage.getItem("token");
+
+              if (!token) {
+                setShowAuth(true);
+              } else {
+                setCurrentView('results');
+              }
+            }} className="hover:text-indigo-600 transition-colors">Demo Results</button>
           </div>
         </div>
       </footer>
