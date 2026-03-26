@@ -47,7 +47,7 @@ import type { DashboardMetrics, SeriesDay, TradeRow } from '@/components/ResultD
 
 export type BacktestResult = Record<string, unknown>;
 export type UnknownRecord = Record<string, unknown>;
-export type CandidateArray = { key: string; value: any }[];
+export type CandidateArray = { key: string; value: any };
 
 import LandingView from '@/components/LandingView';
 import BuilderView from '@/components/BuilderView';
@@ -694,6 +694,24 @@ export default function App() {
     () => getResultsData(backtestState.data as BacktestResult | null),
     [backtestState.data]
   )
+
+  const [metricTab, setMetricTab] = useState<'strategy' | 'sp500'>('strategy')
+
+  const equityData = useMemo(() => {
+    if (resultsData.parsedDataAvailable) {
+      return resultsData.portfolioSeries.map((p, i) => ({
+        month: i,
+        user: p.value,
+        sp500: resultsData.benchmarkSeries[i]?.value ?? 10000,
+        label: p.date || ''
+      }));
+    }
+    return generateEquityData();
+  }, [resultsData]);
+
+  const metrics = resultsData.parsedDataAvailable
+    ? (metricTab === 'strategy' ? resultsData.portfolioMetrics : resultsData.benchmarkMetrics)
+    : (metricTab === 'strategy' ? metricsStrategy : metricsSP500);
 
   const filteredConcepts = useMemo(() => {
     return conceptCards.filter((card) => {
