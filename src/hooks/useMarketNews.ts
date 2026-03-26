@@ -49,23 +49,23 @@ export function useMarketNews(): UseMarketNewsReturn {
       
       // Filter out empty headlines, no image, or generic logos, and map to NewsArticle
       const mappedData: NewsArticle[] = data
-        .filter((item: any) => {
-          if (!item.headline || item.headline.trim() === '') return false;
-          if (!item.image) return false;
+        .filter((item: Record<string, unknown>) => {
+          if (!item.headline || typeof item.headline !== 'string' || item.headline.trim() === '') return false;
+          if (!item.image || typeof item.image !== 'string') return false;
           if (item.image.includes('finnhub/logo') || item.image.includes('reuters_logo')) return false;
           return true;
         })
-        .map((item: any) => {
+        .map((item: Record<string, unknown>) => {
           return {
-            id: item.id,
-            headline: item.headline,
-            summary: item.summary,
-            source: item.source,
-            url: item.url,
-            image: item.image,
-            datetime: item.datetime,
-            category: item.category,
-            related: item.related || (ticker ? ticker : '')
+            id: Number(item.id),
+            headline: String(item.headline),
+            summary: String(item.summary),
+            source: String(item.source),
+            url: String(item.url),
+            image: String(item.image),
+            datetime: Number(item.datetime),
+            category: String(item.category),
+            related: item.related ? String(item.related) : (ticker ? ticker : '')
           };
         });
         
@@ -75,8 +75,12 @@ export function useMarketNews(): UseMarketNewsReturn {
       setNews(finalData);
       cachedNews.current = finalData;
       
-    } catch (err: any) {
-      setError(err.message || 'Network error');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Network error');
+      } else {
+        setError('Network error');
+      }
       if (cachedNews.current.length > 0) {
         setNews(cachedNews.current);
       } else {

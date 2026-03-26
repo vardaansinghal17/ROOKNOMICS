@@ -19,7 +19,7 @@ import {
 import { PortfolioChart } from './PortfolioChart'
 import { TradeMarkerChart } from './TradeMarkerChart'
 import { MetricsComparisonChart } from './MetricsComparisonChart'
-import { Trophy, AlertTriangle } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { fadeUp, staggerContainer, scaleUp } from '@/lib/animations'
 
@@ -180,10 +180,10 @@ export function ResultsDashboard({
         variants={scaleUp} 
         initial="hidden" 
         animate="visible" 
-        className={`p-6 md:p-8 rounded-[2.5rem] mb-10 flex flex-col md:flex-row md:items-center gap-6 border shadow-sm ${weWon ? 'bg-emerald-50 border-emerald-200/60' : 'bg-rose-50 border-rose-200/60'}`}
+        className={`p-6 md:p-8 rounded-[2.5rem] mb-10 flex flex-col md:flex-row md:items-center gap-6 border shadow-sm ${strategyWon ? 'bg-emerald-50 border-emerald-200/60' : 'bg-rose-50 border-rose-200/60'}`}
       >
-        <div className={`w-16 h-16 flex items-center justify-center rounded-[1.5rem] shrink-0 border ${weWon ? 'bg-white border-emerald-100 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.1)]' : 'bg-white border-rose-100 text-rose-600 shadow-[0_8px_16px_rgba(244,63,94,0.1)]'}`}>
-          {weWon ? <Trophy size={28} strokeWidth={1.5} /> : <AlertTriangle size={28} strokeWidth={1.5} />}
+        <div className={`w-16 h-16 flex items-center justify-center rounded-[1.5rem] shrink-0 border ${strategyWon ? 'bg-white border-emerald-100 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.1)]' : 'bg-white border-rose-100 text-rose-600 shadow-[0_8px_16px_rgba(244,63,94,0.1)]'}`}>
+          {strategyWon ? <Trophy size={28} strokeWidth={1.5} /> : <AlertTriangle size={28} strokeWidth={1.5} />}
         </div>
 
         <div className="bg-white border border-slate-200/70 rounded-[2rem] p-6 shadow-[0_30px_80px_rgba(148,163,184,0.12)]">
@@ -318,6 +318,5 @@ export function ResultsDashboard({
           </div>
         )}
       </div>
-    </div>
   )
 }

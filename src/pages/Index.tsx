@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store';
 import { motion } from 'framer-motion';
 import { fadeUp, staggerContainer } from '@/lib/animations';
 import {
@@ -18,24 +20,42 @@ import {
   TrendingUp,
   X,
   XIcon,
-} from 'lucide-react'
-import { conceptCards } from '@/data/mockData'
-import LandingView from '@/components/LandingView'
-import BuilderView from '@/components/BuilderView'
-import AuthDialog from '@/components/AuthDialog'
-import {
-  ArrowDownLeft, ArrowUpRight, TrendingDown, TrendingUp, List,
-  Activity, AlertTriangle, Gavel, PieChart, Info, Search,
-  ChevronRight, Award, Shield,
-  Cpu, GitBranch, BarChart2, X, Lightbulb, Menu, XIcon, LogIn, ExternalLink,
+  ArrowDownLeft,
+  ArrowUpRight,
+  List,
+  Gavel,
+  PieChart,
+  Info,
+  ExternalLink,
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Area,
+  ReferenceLine,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar
+} from 'recharts';
+import type { DashboardMetrics, SeriesDay, TradeRow } from '@/components/ResultDashboard';
+
+export type BacktestResult = Record<string, unknown>;
+export type UnknownRecord = Record<string, unknown>;
+export type CandidateArray = { key: string; value: any }[];
+
+import LandingView from '@/components/LandingView';
+import BuilderView from '@/components/BuilderView';
+import AuthDialog from '@/components/AuthDialog';
 import {
   generateEquityData, tradeHistory, radarData, conceptCards,
   metricsStrategy, metricsSP500,
 } from '@/data/mockData';
-import LandingView from '@/components/LandingView';
-import BuilderView from '@/components/BuilderView';
-import AuthDialog from '@/components/AuthDialog';
 import LearnPage from '@/pages/Learn';
 import { useMarketNews } from '@/hooks/useMarketNews';
 import { formatNewsDate, getPlaceholderGradient } from '@/utils/newsHelpers';
@@ -764,6 +784,7 @@ export default function App() {
 
 /* ─── RESULTS VIEW ────────────────────────────────────────────── */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function ResultsView({ equityData, metrics, metricTab, setMetricTab, setCurrentView }: any) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 max-w-7xl mx-auto px-6 pb-12 pt-8">
@@ -784,11 +805,12 @@ function ResultsView({ equityData, metrics, metricTab, setMetricTab, setCurrentV
 
 /* ─── PERFORMANCE CHART ───────────────────────────────────────── */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const monthIdx = label as number;
   const year = 2004 + Math.floor(monthIdx / 12);
-  const month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][monthIdx % 12];
+  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][monthIdx % 12];
   return (
     <div className="bg-white/95 border border-slate-200 rounded-xl p-3 text-sm">
       <p className="text-slate-600 text-xs mb-1">{month} {year}</p>
@@ -798,6 +820,7 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function PerformanceChart({ data }: { data: any[] }) {
   const annotations = [
     { icon: ArrowDownLeft, color: 'text-rose-600', label: 'Oct 2008: -38%' },
@@ -834,7 +857,7 @@ function PerformanceChart({ data }: { data: any[] }) {
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.08)" />
             <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(v: number) => {
               if (v % 24 === 0) {
-                const labels = ["'04","'06","'08","'10","'12","'14","'16","'18","'20","'22","'24"];
+                const labels = ["'04", "'06", "'08", "'10", "'12", "'14", "'16", "'18", "'20", "'22", "'24"];
                 return labels[v / 24] || '';
               }
               return '';
@@ -874,7 +897,7 @@ function TradeHistoryTable() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-100/50 text-slate-600 text-xs uppercase tracking-wide">
-              {['Date','Action','Price','Shares','P&L','Return','Cumulative'].map(h => (
+              {['Date', 'Action', 'Price', 'Shares', 'P&L', 'Return', 'Cumulative'].map(h => (
                 <th key={h} className="px-3 py-2.5 text-left font-medium">{h}</th>
               ))}
             </tr>
@@ -904,6 +927,7 @@ function TradeHistoryTable() {
 
 /* ─── PERFORMANCE METRICS ─────────────────────────────────────── */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function PerformanceMetrics({ metrics, tab, setTab }: any) {
   const isStrategy = tab === 'strategy';
   const rows = [
@@ -1023,6 +1047,7 @@ function RiskAnalysis() {
 
 /* ─── NEWS VIEW ───────────────────────────────────────────────── */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function NewsView({ setCurrentView }: any) {
   const { news, loading, error, activeTicker, setActiveTicker, refetch } = useMarketNews();
   const [searchInput, setSearchInput] = useState('');
@@ -1052,9 +1077,9 @@ function NewsView({ setCurrentView }: any) {
       const now = new Date();
       const diffMins = Math.floor((now.getTime() - lastUpdated.getTime()) / 60000);
       if (diffMins === 0) {
-         setLastUpdatedText('Updated just now');
+        setLastUpdatedText('Updated just now');
       } else {
-         setLastUpdatedText(`Updated ${diffMins} min ago`);
+        setLastUpdatedText(`Updated ${diffMins} min ago`);
       }
     }, 30000);
     return () => clearInterval(timer);
@@ -1073,15 +1098,15 @@ function NewsView({ setCurrentView }: any) {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <h1 className="text-3xl font-bold text-slate-900">Market News</h1>
         <p className="text-slate-600 mt-1">Live updates and company-specific headlines.</p>
-        
+
         {/* Ticker Search Bar */}
         <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 w-full max-w-md flex items-center gap-3 mt-4 mb-8 relative shadow-sm hover:border-indigo-300 transition-colors focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100">
           <Search size={18} className="text-slate-500" />
-          <input 
-            className="bg-transparent text-slate-800 placeholder-slate-400 outline-none w-full text-sm font-medium" 
-            placeholder="Search by ticker — AAPL, TSLA, SPY..." 
-            value={searchInput} 
-            onChange={handleInputChange} 
+          <input
+            className="bg-transparent text-slate-800 placeholder-slate-400 outline-none w-full text-sm font-medium"
+            placeholder="Search by ticker — AAPL, TSLA, SPY..."
+            value={searchInput}
+            onChange={handleInputChange}
           />
           {searchInput && (
             <button onClick={clearSearch} className="text-slate-400 hover:text-slate-600 p-1 flex-shrink-0 transition-colors">
@@ -1101,7 +1126,7 @@ function NewsView({ setCurrentView }: any) {
                 </>
               ) : (
                 <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  Showing news for: <span className="text-indigo-600">{activeTicker}</span> 
+                  Showing news for: <span className="text-indigo-600">{activeTicker}</span>
                   {!loading && news && (
                     <span className="bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-bold ml-1 border border-indigo-100 shadow-sm">
                       {news.length} {news.length === 1 ? 'article' : 'articles'}
@@ -1173,7 +1198,7 @@ function NewsView({ setCurrentView }: any) {
             ))}
           </div>
         ) : !loading && news.length === 0 ? (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-20 bg-slate-50 border border-slate-200 rounded-[2rem] mt-6 shadow-inner"
@@ -1194,14 +1219,14 @@ function NewsView({ setCurrentView }: any) {
             )}
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
           >
             {news.map((article) => (
-              <motion.div 
+              <motion.div
                 key={article.id}
                 variants={fadeUp}
                 onClick={() => window.open(article.url, '_blank')}
@@ -1210,14 +1235,14 @@ function NewsView({ setCurrentView }: any) {
                 {/* Thumbnail Image */}
                 <div className="h-48 w-full relative overflow-hidden bg-slate-100 flex-shrink-0 border-b border-slate-100">
                   {article.image ? (
-                    <img 
-                      src={article.image} 
-                      alt={article.headline} 
+                    <img
+                      src={article.image}
+                      alt={article.headline}
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                         e.currentTarget.parentElement!.style.background = getPlaceholderGradient(article.source);
                       }}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                     />
                   ) : (
                     <div className="w-full h-full" style={{ background: getPlaceholderGradient(article.source) }} />
@@ -1243,24 +1268,24 @@ function NewsView({ setCurrentView }: any) {
                       {article.category}
                     </span>
                   </div>
-                  
+
                   {/* Headline */}
                   <h3 className="text-lg font-bold text-slate-900 mb-3 leading-snug line-clamp-2 group-hover:text-indigo-700 transition-colors duration-300" title={article.headline}>
                     {article.headline}
                   </h3>
-                  
+
                   {/* Summary */}
                   <p className="text-slate-600 text-sm leading-relaxed flex-1 line-clamp-3">
                     {article.summary}
                   </p>
-                  
+
                   {/* Related Ticker Pill at bottom */}
                   {article.related && (
                     <div className="mt-5 pt-4 border-t border-slate-200/60 flex flex-wrap gap-2">
                       {article.related.split(',').slice(0, 3).map(ticker => (
-                       <span key={ticker} className="bg-emerald-50 text-emerald-700 border border-emerald-100/50 text-[10px] uppercase tracking-widest px-2.5 py-1 rounded font-bold shadow-sm">
-                         {ticker.trim()}
-                       </span>
+                        <span key={ticker} className="bg-emerald-50 text-emerald-700 border border-emerald-100/50 text-[10px] uppercase tracking-widest px-2.5 py-1 rounded font-bold shadow-sm">
+                          {ticker.trim()}
+                        </span>
                       ))}
                     </div>
                   )}

@@ -28,7 +28,7 @@ export const runBacktest = createAsyncThunk(
 )
 
 interface BacktestState {
-  data:    any | null
+  data:    unknown | null
   loading: boolean
   error:   string | null
 }

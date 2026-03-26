@@ -125,7 +125,7 @@ export function useLearnSearch(): UseLearnSearchReturn {
       setWikiError('No finance-related results found for that term. Try searching for indicators, strategies, or metrics.')
     }
     setIsWikiLoading(false)
-  }, []);
+  }, [fetchWikiWithFallback]);
 
   useEffect(() => {
     // Clear wiki state when query changes
