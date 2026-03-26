@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { fadeUp, staggerContainer, scaleUp } from '@/lib/animations';
 import {
   BarChart2, TrendingUp, Shield, Zap, ArrowRight, Play,
   CheckCircle, ChevronRight, Star,
@@ -46,28 +48,37 @@ interface LandingViewProps {
 }
 
 export default function LandingView({ setCurrentView, setShowAuth }: LandingViewProps) {
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 1000], [0, 200]);
+  const y2 = useTransform(scrollY, [0, 1000], [0, -200]);
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Visual flair - blurred blobs */}
-      <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-500/10 blur-[120px] rounded-[100%] pointer-events-none -z-10" />
-      <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-emerald-500/5 blur-[120px] rounded-[100%] pointer-events-none -z-10" />
+      <motion.div style={{ y: y1 }} className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-500/10 blur-[120px] rounded-[100%] pointer-events-none -z-10" />
+      <motion.div style={{ y: y2 }} className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-emerald-500/5 blur-[120px] rounded-[100%] pointer-events-none -z-10" />
 
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-6 pt-20 pb-16 lg:pt-32 lg:pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <motion.div 
+          className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
           <div className="relative z-10">
 
-            <h1 className="text-5xl lg:text-7xl font-extrabold text-slate-900 leading-tight mb-6 tracking-tight">
+            <motion.h1 variants={fadeUp} className="text-5xl lg:text-7xl font-extrabold text-slate-900 leading-tight mb-6 tracking-tight">
               Think you can beat the{' '}
               <span className="bg-gradient-to-r from-indigo-600 to-purple-500 bg-clip-text text-transparent relative">
                 market?
 
               </span>
-            </h1>
-            <p className="text-slate-600 text-lg md:text-xl leading-relaxed mb-10 max-w-lg font-medium">
+            </motion.h1>
+            <motion.p variants={fadeUp} className="text-slate-600 text-lg md:text-xl leading-relaxed mb-10 max-w-lg font-medium">
               Build a custom trading strategy using technical indicators—then watch it go head-to-head against the S&P 500 over 20 years of real market data.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            </motion.p>
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => setCurrentView('builder')}
                 className="bg-indigo-600 hover:bg-indigo-700 hover:-translate-y-0.5 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 text-base shadow-lg shadow-indigo-600/20"
@@ -80,16 +91,16 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
               >
                 <Play size={16} className="text-indigo-600" /> See How It Looks
               </button>
-            </div>
-            <div className="flex flex-wrap items-center gap-6 mt-10 text-slate-600 text-sm font-medium">
+            </motion.div>
+            <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-6 mt-10 text-slate-600 text-sm font-medium">
               <span className="flex items-center gap-2"><CheckCircle size={16} className="text-emerald-500" /> Free forever</span>
               <span className="flex items-center gap-2"><CheckCircle size={16} className="text-emerald-500" /> No signup required</span>
               <span className="flex items-center gap-2"><CheckCircle size={16} className="text-emerald-500" /> 20 years of data</span>
-            </div>
+            </motion.div>
           </div>
 
           {/* App preview mockup - refined */}
-          <div className="relative z-10 lg:ml-auto w-full max-w-[500px]">
+          <motion.div variants={scaleUp} className="relative z-10 lg:ml-auto w-full max-w-[500px]">
             <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 rounded-[2.5rem] transform rotate-3 scale-[1.03] -z-10 blur-sm" />
             <div className="bg-white border border-slate-200/80 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/50 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-8">
@@ -146,26 +157,38 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
               </div>
               <p className="text-slate-900 text-lg font-bold">0.82</p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* Features - Bento Box Style */}
       <section className="max-w-7xl mx-auto px-6 py-24 relative z-10">
-        <div className="mb-16 text-center lg:text-left lg:max-w-2xl">
+        <motion.div 
+          className="mb-16 text-center lg:text-left lg:max-w-2xl"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+        >
           <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
             Everything you need to test your trading thesis
           </h2>
           <p className="text-slate-600 text-lg leading-relaxed">
             No spreadsheets, no coding, no BS. Just honest results visualized beautifully to save you from costly mistakes.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 grid-flow-row-dense">
+        <motion.div 
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6 grid-flow-row-dense"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+        >
           {features.map((f, i) => {
             const isLarge = i === 0;
             return (
-              <div key={i} className={`bg-white border border-slate-200/60 p-8 lg:p-10 rounded-[2rem] hover:border-indigo-300 transition-all duration-500 group relative overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 flex flex-col ${isLarge ? 'lg:col-span-2 lg:row-span-2 bg-gradient-to-br from-white to-indigo-50/50 justify-center' : 'lg:col-span-1'}`}>
+              <motion.div variants={fadeUp} key={i} whileHover={{ scale: 1.05, y: -5 }} className={`bg-white border border-slate-200/60 p-8 lg:p-10 rounded-[2rem] hover:border-indigo-300 transition-all duration-500 group relative overflow-hidden shadow-sm hover:shadow-2xl flex flex-col ${isLarge ? 'lg:col-span-2 lg:row-span-2 bg-gradient-to-br from-white to-indigo-50/50 justify-center' : 'lg:col-span-1'}`}>
                 <div className="absolute -right-10 -top-10 opacity-5 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
                   <f.icon size={isLarge ? 240 : 160} />
                 </div>
@@ -179,32 +202,41 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
                     Explore builder capabilities <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                   </div>
                 )}
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </section>
 
       {/* How it works - Vertical Stepper */}
       <section className="bg-slate-50/50 border-y border-slate-200 py-24 relative z-10">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
-              How it works
-            </h2>
-            <p className="text-slate-600 text-lg">Three simple steps to reality-check your strategy.</p>
-          </div>
+        <motion.div 
+          className="max-w-6xl mx-auto px-6"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start relative">
+            <div className="lg:col-span-5 lg:sticky lg:top-32 text-center lg:text-left mb-8 lg:mb-0">
+              <motion.div variants={fadeUp}>
+                <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
+                  How it works
+                </h2>
+                <p className="text-slate-600 text-lg">Three simple steps to reality-check your strategy.</p>
+              </motion.div>
+            </div>
 
-          <div className="relative">
-            {/* Connecting line */}
-            <div className="hidden md:block absolute left-[31px] top-6 bottom-6 w-[2px] bg-gradient-to-b from-indigo-200 via-rose-200 to-emerald-200" />
+            <div className="relative lg:col-span-7">
+              {/* Connecting line */}
+              <div className="hidden md:block absolute left-[31px] top-6 bottom-6 w-[2px] bg-gradient-to-b from-indigo-200 via-rose-200 to-emerald-200" />
 
             {[
               { step: '1', title: 'Configure Your Strategy', desc: 'Set RSI thresholds, moving average crossover periods, and risk management parameters without writing a single line of code.' },
               { step: '2', title: 'Run the Backtest', desc: 'We instantly simulate your specific strategy against 20 years of S&P 500 historical data, accounting for trading fees.' },
               { step: '3', title: 'Face the Verdict', desc: 'See exactly how your strategy compares to a simple buy-and-hold indexing approach in a side-by-side performance review.' },
             ].map((s, i) => (
-              <div key={i} className="relative flex flex-col md:flex-row gap-6 md:gap-10 mb-16 last:mb-0 group">
+              <motion.div variants={fadeUp} key={i} className="relative flex flex-col md:flex-row gap-6 md:gap-10 mb-16 last:mb-0 group">
                 <div className="w-16 h-16 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-center flex-shrink-0 z-10 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:border-indigo-400 group-hover:shadow-indigo-500/20">
                   <span className="text-indigo-600 font-black text-xl">{s.step}</span>
                 </div>
@@ -212,20 +244,27 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
                   <h3 className="text-xl text-slate-900 font-bold mb-3 tracking-tight">{s.title}</h3>
                   <p className="text-slate-600 text-base leading-relaxed">{s.desc}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
+            </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Testimonials - Marquee Scroll */}
       <section className="py-16 pb-12 relative z-10 overflow-hidden bg-slate-50/50 border-t border-slate-200/50">
-        <div className="mb-12 text-center max-w-7xl mx-auto px-6">
+        <motion.div 
+          className="mb-12 text-center max-w-7xl mx-auto px-6"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+        >
           <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
             What traders are saying
           </h2>
           <p className="text-slate-600 text-lg">Don't just take our word for it. See what others have built.</p>
-        </div>
+        </motion.div>
 
         <div className="relative flex overflow-x-hidden group py-4" style={{ '--duration': '40s' } as React.CSSProperties}>
           <div className="flex animate-marquee hover:[animation-play-state:paused] w-max gap-8 pr-8">
@@ -260,7 +299,13 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
 
       {/* CTA Layered */}
       <section className="px-6 py-8 relative z-10 pt-16">
-        <div className="max-w-4xl mx-auto bg-slate-100 rounded-[3rem] p-10 lg:p-16 text-center relative overflow-hidden shadow-xl shadow-slate-200/50 border-2 border-white backdrop-blur-sm">
+        <motion.div 
+          className="max-w-4xl mx-auto bg-slate-100 rounded-[3rem] p-10 lg:p-16 text-center relative overflow-hidden shadow-xl shadow-slate-200/50 border-2 border-white backdrop-blur-sm"
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+        >
           <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50/50 blur-[80px] rounded-full pointer-events-none" />
 
           <div className="relative z-10">
@@ -277,7 +322,7 @@ export default function LandingView({ setCurrentView, setShowAuth }: LandingView
               Start Building Now <ArrowRight size={20} />
             </button>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Footer */}

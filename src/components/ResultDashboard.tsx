@@ -17,6 +17,11 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { PortfolioChart } from './PortfolioChart'
+import { TradeMarkerChart } from './TradeMarkerChart'
+import { MetricsComparisonChart } from './MetricsComparisonChart'
+import { Trophy, AlertTriangle } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { fadeUp, staggerContainer, scaleUp } from '@/lib/animations'
 
 export interface SeriesDay {
   date: string
@@ -169,24 +174,16 @@ export function ResultsDashboard({
   ]
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 max-w-7xl mx-auto px-6 pb-12 pt-8">
-      <div className="xl:col-span-3 space-y-6">
-        <div className="bg-white border border-slate-200/70 rounded-[2rem] p-6 shadow-[0_30px_80px_rgba(148,163,184,0.12)]">
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-            <div>
-              <h2 className="text-slate-900 font-semibold text-lg">Portfolio Value Over Time</h2>
-              <p className="text-slate-600 text-sm">
-                Monthly equity curve · {portfolioSeries.length} data points
-              </p>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <span className="bg-rose-500/15 text-rose-600 border border-rose-200 text-xs px-3 py-1 rounded-full">Your Strategy</span>
-              <span className="bg-emerald-500/15 text-emerald-700 border border-emerald-200 text-xs px-3 py-1 rounded-full">S&P 500 (Buy & Hold)</span>
-            </div>
-          </div>
-          <div className="mt-6">
-            <PortfolioChart portfolioSeries={portfolioSeries} benchmarkSeries={benchmarkSeries} />
-          </div>
+    <div className="max-w-6xl mx-auto px-6 py-12">
+      {/* Verdict banner */}
+      <motion.div 
+        variants={scaleUp} 
+        initial="hidden" 
+        animate="visible" 
+        className={`p-6 md:p-8 rounded-[2.5rem] mb-10 flex flex-col md:flex-row md:items-center gap-6 border shadow-sm ${weWon ? 'bg-emerald-50 border-emerald-200/60' : 'bg-rose-50 border-rose-200/60'}`}
+      >
+        <div className={`w-16 h-16 flex items-center justify-center rounded-[1.5rem] shrink-0 border ${weWon ? 'bg-white border-emerald-100 text-emerald-600 shadow-[0_8px_16px_rgba(16,185,129,0.1)]' : 'bg-white border-rose-100 text-rose-600 shadow-[0_8px_16px_rgba(244,63,94,0.1)]'}`}>
+          {weWon ? <Trophy size={28} strokeWidth={1.5} /> : <AlertTriangle size={28} strokeWidth={1.5} />}
         </div>
 
         <div className="bg-white border border-slate-200/70 rounded-[2rem] p-6 shadow-[0_30px_80px_rgba(148,163,184,0.12)]">
@@ -240,123 +237,53 @@ export function ResultsDashboard({
             <span className="text-indigo-600 text-xs">View All</span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="xl:col-span-1 space-y-6">
-        <div className="bg-white border border-slate-200/70 rounded-[2rem] p-6 shadow-[0_30px_80px_rgba(148,163,184,0.12)]">
-          <div className="flex items-center gap-2 mb-4">
-            <Activity size={18} className="text-indigo-600" />
-            <h2 className="text-slate-900 font-semibold">Performance Metrics</h2>
-          </div>
+      {/* Summary metric cards */}
+      <motion.div 
+        className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-12"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
+        {[
+          { label: 'Your return', value: `+${portfolioMetrics.totalReturn}%`, highlight: true },
+          { label: 'Index return', value: `+${benchmarkMetrics.totalReturn}%` },
+          { label: 'Max drawdown', value: `${portfolioMetrics.maxDrawdown}%` },
+          { label: 'Total trades', value: portfolioMetrics.totalTrades },
+        ].map(card => (
+          <motion.div variants={fadeUp} key={card.label} className="bg-white border border-slate-200/80 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-shadow">
+            <p className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider">{card.label}</p>
+            <p className={`text-3xl md:text-4xl font-extrabold tracking-tight ${card.highlight ? 'text-indigo-600' : 'text-slate-900'}`}>{card.value}</p>
+          </motion.div>
+        ))}
+      </motion.div>
 
-          <div className="flex gap-2 mb-5">
-            <button
-              onClick={() => setMetricTab('strategy')}
-              className={`text-xs px-3 py-2 rounded-full transition-all ${
-                metricTab === 'strategy'
-                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                  : 'bg-slate-100 text-slate-600'
-              }`}
-            >
-              Your Strategy
-            </button>
-            <button
-              onClick={() => setMetricTab('sp500')}
-              className={`text-xs px-3 py-2 rounded-full transition-all ${
-                metricTab === 'sp500'
-                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                  : 'bg-slate-100 text-slate-600'
-              }`}
-            >
-              S&P 500
-            </button>
-          </div>
+      {/* Charts Grid */}
+      <motion.div 
+        className="space-y-8"
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+      >
+        <motion.div variants={fadeUp} className="bg-white border border-slate-200/80 rounded-[2.5rem] p-8 shadow-sm">
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-8 tracking-tight">Portfolio vs S&P 500 Over Time</h2>
+          <PortfolioChart portfolioSeries={portfolioSeries} benchmarkSeries={benchmarkSeries} />
+        </motion.div>
 
-          <div>
-            {metricRows.map((row, index) => (
-              <div key={row.label} className={`flex justify-between gap-4 py-4 ${index < metricRows.length - 1 ? 'border-b border-slate-200' : ''}`}>
-                <div className="text-slate-600 text-sm flex items-center gap-1">
-                  <span>{row.label}</span>
-                  {row.label === 'Total Return' && metricTab === 'sp500' && <Info size={12} className="text-slate-400" />}
-                </div>
-                <div className="text-right">
-                  <span className={`text-sm font-medium ${row.color}`}>{row.value}</span>
-                  {row.note && <p className="text-slate-500 text-xs mt-0.5">{row.note}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <motion.div variants={fadeUp} className="bg-white border border-slate-200/80 rounded-[2.5rem] p-8 shadow-sm">
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-8 tracking-tight">When You Traded</h2>
+            <TradeMarkerChart portfolioSeries={portfolioSeries} tradeLog={tradeLog} />
+          </motion.div>
 
-          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-            <div className="flex gap-2">
-              <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-amber-800 text-xs leading-relaxed">
-                After fees and taxes, your strategy returned {formatSignedPercent(portfolioMetrics.totalReturn)} vs the S&P&apos;s {formatSignedPercent(benchmarkMetrics.totalReturn)}.
-              </p>
-            </div>
-          </div>
+          <motion.div variants={fadeUp} className="bg-white border border-slate-200/80 rounded-[2.5rem] p-8 shadow-sm">
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-8 tracking-tight">Performance Deep Dive</h2>
+            <MetricsComparisonChart portfolioMetrics={portfolioMetrics} benchmarkMetrics={benchmarkMetrics} />
+          </motion.div>
         </div>
-
-        <div className="bg-gradient-to-br from-white to-slate-50 border border-indigo-200 rounded-[2rem] p-6 shadow-[0_30px_80px_rgba(99,102,241,0.12)]">
-          <div className="flex items-center gap-2 mb-4">
-            <Gavel size={16} className="text-indigo-600" />
-            <span className="text-indigo-600 text-xs font-bold tracking-[0.2em]">THE VERDICT</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="min-w-0 bg-rose-50 border border-rose-200 rounded-2xl p-4">
-              <p className="text-rose-600 text-[11px] font-bold tracking-[0.2em] mb-2 break-words">YOUR STRATEGY</p>
-              <p className="text-3xl sm:text-4xl leading-none font-bold text-rose-700 break-words">{formatSignedPercent(portfolioMetrics.totalReturn, 0)}</p>
-              <p className="text-slate-500 text-xs mt-2">Total Return</p>
-            </div>
-            <div className="min-w-0 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 relative overflow-hidden">
-              {!strategyWon && (
-                <span className="absolute top-3 right-3 max-w-[72px] bg-emerald-500 text-white text-[10px] leading-none font-bold px-2 py-1 rounded-full text-center">
-                  WINNER
-                </span>
-              )}
-              <p className="text-emerald-700 text-[11px] font-bold tracking-[0.18em] mb-2 break-words pr-12">S&amp;P 500</p>
-              <p className="text-3xl sm:text-4xl leading-none font-bold text-emerald-700 break-words">{formatSignedPercent(benchmarkMetrics.totalReturn, 0)}</p>
-              <p className="text-slate-500 text-xs mt-2">Total Return</p>
-            </div>
-          </div>
-          <p className="text-slate-700 text-sm text-center mt-5 leading-relaxed">
-            {strategyWon ? 'Your strategy beat the index by ' : 'The index beat your strategy by '}
-            <span className="text-indigo-600 font-semibold">{formatSignedPercent(Math.abs(returnGap), 1)}</span>
-            {' '}over this backtest period.
-          </p>
-          <p className="text-indigo-600 text-sm text-center mt-3">Learn why -&gt;</p>
-        </div>
-
-        <div className="bg-white border border-slate-200/70 rounded-[2rem] p-6 shadow-[0_30px_80px_rgba(148,163,184,0.12)]">
-          <div className="flex items-center gap-2 mb-5">
-            <PieChart size={18} className="text-indigo-600" />
-            <h2 className="text-slate-900 font-semibold">Risk Analysis</h2>
-          </div>
-
-          <div className="h-72 px-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={riskStats.radarData} cx="50%" cy="52%" outerRadius="68%">
-                <PolarGrid stroke="rgba(148,163,184,0.35)" />
-                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
-                <Radar dataKey="strategy" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.14} />
-                <Radar dataKey="benchmark" stroke="#10b981" fill="#10b981" fillOpacity={0.18} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 mt-3">
-            <span className="text-slate-600 text-xs text-center bg-slate-100/60 rounded-xl py-3 px-2">
-              Beta: {riskStats.beta.toFixed(2)}
-            </span>
-            <span className="text-slate-600 text-xs text-center bg-slate-100/60 rounded-xl py-3 px-2">
-              Alpha: {riskStats.alpha.toFixed(1)}%
-            </span>
-            <span className="text-slate-600 text-xs text-center bg-slate-100/60 rounded-xl py-3 px-2">
-              VaR (5%): {riskStats.var5.toFixed(1)}%
-            </span>
-          </div>
-        </div>
+      </motion.div>
 
         {loading && (
           <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-sm text-indigo-700">
