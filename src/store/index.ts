@@ -1,13 +1,14 @@
 // src/store/index.ts
-import { configureStore } from '@reduxjs/toolkit'
-import backtestReducer    from './backtestSlice'
+import { configureStore } from '@reduxjs/toolkit';
+import backtestReducer from './backtestSlice';
+import authReducer     from './authSlice';
 
 export const store = configureStore({
   reducer: {
-    backtest: backtestReducer
-  }
-})
+    backtest: backtestReducer,
+    auth:     authReducer,
+  },
+});
 
-// These types are used in every component that reads from the store
-export type RootState   = ReturnType<typeof store.getState>
-export type AppDispatch = typeof store.dispatch
+export type RootState   = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
