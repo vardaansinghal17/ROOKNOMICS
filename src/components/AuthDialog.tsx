@@ -6,18 +6,21 @@ import { useAuth } from '../hooks/useAuth.js';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import { googleAuth } from '@/lib/api.js';
+import type { ViewType } from '@/pages/Index';
 
 interface AuthDialogProps {
   open: boolean;
   onClose: () => void;
+  setCurrentView: React.Dispatch<React.SetStateAction<ViewType>>; // ADD THIS
 }
 
-export default function AuthDialog({ open, onClose }: AuthDialogProps) {
-  const [mode, setMode]               = useState<'login' | 'signup'>('login');
+
+export default function AuthDialog({ open, onClose, setCurrentView }: AuthDialogProps) {
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail]             = useState('');
-  const [password, setPassword]       = useState('');
-  const [name, setName]               = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
 
   const {
     // login flow
@@ -111,7 +114,7 @@ export default function AuthDialog({ open, onClose }: AuthDialogProps) {
   }
 
   const isLoading = mode === 'login' ? isLoginLoading : isRegisterLoading;
-  const error     = mode === 'login' ? loginError     : registerError;
+  const error = mode === 'login' ? loginError : registerError;
 
   return (
     <>
@@ -155,33 +158,30 @@ export default function AuthDialog({ open, onClose }: AuthDialogProps) {
             {/* Social buttons — UI only for now */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               <GoogleLogin
-  onSuccess={async (credentialResponse) => {
-    try {
-      const decoded: any = jwtDecode(credentialResponse.credential!);
+                onSuccess={async (credentialResponse) => {
+                  try {
+                    const decoded: any = jwtDecode(credentialResponse.credential!);
 
-      const res = await googleAuth({
-        googleId: decoded.sub,
-        email: decoded.email,
-        name: decoded.name,
-        avatar: decoded.picture,
-      });
+                    const res = await googleAuth({
+                      googleId: decoded.sub,
+                      email: decoded.email,
+                      name: decoded.name,
+                      avatar: decoded.picture,
+                    });
 
-      if (res.token) {
-        localStorage.setItem("token", res.token);
-        onClose();
+                    if (res.token) {
+                      localStorage.setItem("token", res.token);
 
-        window.location.reload(); // refresh UI
-      }
-    } catch (err) {
-      console.error("Google login failed", err);
-      alert("Google login failed");
-    }
-  }}
-  onError={() => {
-    console.log("Google Login Failed");
-  }}
-/>
-              
+                      setCurrentView('builder'); 
+                      onClose();
+                    }
+                  } catch (err) {
+                    console.error("Google login failed", err);
+                    alert("Google login failed");
+                  }
+                }}
+              />
+
             </div>
 
             <div className="flex items-center gap-3 mb-6">

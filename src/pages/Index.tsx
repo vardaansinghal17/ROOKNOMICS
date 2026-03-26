@@ -61,7 +61,7 @@ import { useMarketNews } from '@/hooks/useMarketNews';
 import { formatNewsDate, getPlaceholderGradient } from '@/utils/newsHelpers';
 
 
-type ViewType = 'landing' | 'builder' | 'results' | 'news' | 'learn';
+ export type ViewType = 'landing' | 'builder' | 'results' | 'news' | 'learn';
 
 const iconMap: Record<string, React.ElementType> = {
   TrendingUp,
@@ -795,7 +795,7 @@ export default function App() {
         )}
       </nav>
 
-      <AuthDialog open={showAuth} onClose={() => setShowAuth(false)} />
+      <AuthDialog open={showAuth} onClose={() => setShowAuth(false)} setCurrentView={setCurrentView} />
 
       <div className="relative z-10 pt-16">
         {currentView === 'landing' && <LandingView setCurrentView={(v: string) => setCurrentView(v as ViewType)} setShowAuth={setShowAuth} />}
