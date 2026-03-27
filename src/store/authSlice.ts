@@ -31,7 +31,7 @@ export const verifyOtpUser = createAsyncThunk(
     try {
       const data = await authApi.verifyOtp(payload);
       // Persist token + user so page refresh keeps them logged in
-      localStorage.setItem('token', data.token);
+    
       localStorage.setItem('user', JSON.stringify(data.user));
       return data; // { token, user, message }
     } catch (err: any) {
@@ -62,7 +62,7 @@ export const loginUser = createAsyncThunk(
   ) => {
     try {
       const data = await authApi.login(payload);
-      localStorage.setItem('token', data.token);
+     
       localStorage.setItem('user', JSON.stringify(data.user));
       return data; // { token, user }
     } catch (err: any) {
@@ -70,11 +70,21 @@ export const loginUser = createAsyncThunk(
     }
   }
 );
-
+export const logoutUser = createAsyncThunk(
+  'auth/logout',
+  async (_, { rejectWithValue }) => {
+    try {
+      await authApi.logout(); // tells server to clear the cookie
+      localStorage.removeItem('user');
+    } catch (err: any) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 // ── State ─────────────────────────────────────────────────
 interface AuthState {
   user: AuthUser | null;
-  token: string | null;
+  
 
   // Separate loading flags so dialogs know which button to spin
   isLoginLoading: boolean;
@@ -96,12 +106,12 @@ interface AuthState {
 }
 
 // Rehydrate from localStorage on page refresh
-const savedToken = localStorage.getItem('token');
+
 const savedUser  = localStorage.getItem('user');
 
 const initialState: AuthState = {
   user:    savedUser  ? JSON.parse(savedUser)  : null,
-  token:   savedToken ?? null,
+   // We rely on httpOnly cookie for auth, so no need to persist token in localStorage
 
   isLoginLoading:    false,
   isRegisterLoading: false,
@@ -124,8 +134,7 @@ const authSlice = createSlice({
   reducers: {
     logout: (state) => {
       state.user  = null;
-      state.token = null;
-      localStorage.removeItem('token');
+      
       localStorage.removeItem('user');
     },
     // Call when user closes AuthDialog to reset everything
@@ -169,7 +178,7 @@ const authSlice = createSlice({
         state.isOtpLoading = false;
         state.isVerified   = true;   // OtpDialog watches this to show success state
         state.user         = action.payload.user;
-        state.token        = action.payload.token;
+        //state.token        = action.payload.token;
         state.otpSent      = false;
       })
       .addCase(verifyOtpUser.rejected, (state, action) => {
@@ -201,7 +210,7 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoginLoading = false;
         state.user           = action.payload.user;
-        state.token          = action.payload.token;
+        //state.token          = action.payload.token;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoginLoading = false;

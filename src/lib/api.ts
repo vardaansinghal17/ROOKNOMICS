@@ -11,9 +11,9 @@ export async function apiRequest<T = any>(
 
   const res = await fetch(`${BASE_URL}${url}`, {
     ...options,
+    credentials: 'include', // send cookies if any
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
   });
@@ -47,7 +47,7 @@ export const authApi = {
 
   // Step 2 of signup — verifies OTP then creates the real account
   verifyOtp: (payload: { email: string; otp: string }) =>
-    apiRequest<{ token: string; user: AuthUser; message: string }>('/auth/verify-otp', {
+    apiRequest<{ user: AuthUser; message: string }>('/auth/verify-otp', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
@@ -61,11 +61,15 @@ export const authApi = {
 
   // Normal login — returns JWT immediately
   login: (payload: { email: string; password: string }) =>
-    apiRequest<{ token: string; user: AuthUser }>('/auth/login', {
+    apiRequest<{ user: AuthUser }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
 
+     logout: () =>
+    apiRequest<{ message: string }>('/auth/logout', {
+      method: 'POST',
+    }),
   // Protected — get current user from JWT
   getMe: () =>
     apiRequest<{ user: AuthUser }>('/auth/me'),

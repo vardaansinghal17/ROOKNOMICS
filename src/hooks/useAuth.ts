@@ -6,7 +6,7 @@ import {
   registerUser,
   verifyOtpUser,
   resendOtpUser,
-  logout,
+  logoutUser,
   resetAuthState,
   clearLoginError,
   clearRegisterError,
@@ -20,8 +20,7 @@ export function useAuth() {
   return {
     // ── State ──────────────────────────────────────────────
     user:       auth.user,
-    token:      auth.token,
-    isLoggedIn: !!auth.user && !!auth.token,
+    isLoggedIn: !!auth.user ,
 
     // Loading states — one per action so each button spins independently
     isLoginLoading:    auth.isLoginLoading,
@@ -52,7 +51,7 @@ export function useAuth() {
     handleResendOtp: (email: string) =>
       dispatch(resendOtpUser({ email })),
 
-    handleLogout: () => dispatch(logout()),
+    handleLogout: () => dispatch(logoutUser()),
 
     // ── Error clearers ─────────────────────────────────────
     clearLoginError:    () => dispatch(clearLoginError()),
