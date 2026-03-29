@@ -6,12 +6,16 @@ import {
   registerUser,
   verifyOtpUser,
   resendOtpUser,
+  googleAuthUser,
+  fetchCurrentUser,
   logout,
   resetAuthState,
   clearLoginError,
   clearRegisterError,
   clearOtpError,
+  clearGoogleError,
 } from '../store/authSlice';
+import type { GoogleAuthPayload } from '../lib/api';
 
 export function useAuth() {
   const dispatch = useDispatch<AppDispatch>();
@@ -23,23 +27,26 @@ export function useAuth() {
     token:      auth.token,
     isLoggedIn: !!auth.user && !!auth.token,
 
-    // Loading states — one per action so each button spins independently
+    // Loading states
     isLoginLoading:    auth.isLoginLoading,
     isRegisterLoading: auth.isRegisterLoading,
     isOtpLoading:      auth.isOtpLoading,
     isResendLoading:   auth.isResendLoading,
+    isGoogleLoading:   auth.isGoogleLoading,
+    isMeLoading:       auth.isMeLoading,
 
-    // Error states — one per action
+    // Error states
     loginError:    auth.loginError,
     registerError: auth.registerError,
     otpError:      auth.otpError,
     resendError:   auth.resendError,
+    googleError:   auth.googleError,
 
     // Flow flags
-    otpSent:    auth.otpSent,    // true after register → AuthDialog opens OtpDialog
-    isVerified: auth.isVerified, // true after verifyOtp → OtpDialog shows success
+    otpSent:    auth.otpSent,
+    isVerified: auth.isVerified,
 
-    // ── Handlers — components call these, no dispatch needed ──
+    // ── Handlers ──────────────────────────────────────────
     handleRegister: (name: string, email: string, password: string) =>
       dispatch(registerUser({ name, email, password })),
 
@@ -52,14 +59,22 @@ export function useAuth() {
     handleResendOtp: (email: string) =>
       dispatch(resendOtpUser({ email })),
 
+    /** POST /api/auth/google — send decoded Google user payload */
+    handleGoogleAuth: (payload: GoogleAuthPayload) =>
+      dispatch(googleAuthUser(payload)),
+
+    /** GET /api/auth/me — validate JWT + refresh user data from server */
+    fetchCurrentUser: () =>
+      dispatch(fetchCurrentUser()),
+
     handleLogout: () => dispatch(logout()),
 
     // ── Error clearers ─────────────────────────────────────
     clearLoginError:    () => dispatch(clearLoginError()),
     clearRegisterError: () => dispatch(clearRegisterError()),
     clearOtpError:      () => dispatch(clearOtpError()),
+    clearGoogleError:   () => dispatch(clearGoogleError()),
 
-    // Resets all auth state — call when modal closes
     resetAuth: () => dispatch(resetAuthState()),
   };
 }

@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { fadeUp, staggerContainer } from '@/lib/animations';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Settings, TrendingUp, TrendingDown, Activity, Sliders,
-  Play, RotateCcw, Info, ChevronDown, DollarSign,
+  Play, RotateCcw, Info, DollarSign, ChevronDown,
+  TrendingUp, Activity, TrendingDown, Sliders,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -19,6 +18,156 @@ interface BuilderViewProps {
   setCurrentView: (v: string) => void;
 }
 
+/* ── RULE BLOCK ─────────────────────────────────────── */
+function RuleBlock({
+  id,
+  label,
+  tag,
+  icon: Icon,
+  enabled,
+  onToggle,
+  children,
+}: {
+  id: string;
+  label: string;
+  tag: string;
+  icon: React.ElementType;
+  enabled: boolean;
+  onToggle: (v: boolean) => void;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="relative border border-[#1A1A1A] hover:border-[#2A2A2A] transition-colors duration-200"
+      style={{ background: '#0B0B0B' }}
+    >
+      {/* Rule header */}
+      <div
+        className="flex items-center justify-between px-5 py-4 cursor-pointer select-none"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-px h-5 bg-emerald-400/30" />
+          <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase font-medium">{tag}</p>
+          <div className="flex items-center gap-2">
+            <Icon size={13} className={enabled ? 'text-emerald-400' : 'text-[#2A2A2A]'} />
+            <span className="text-sm font-medium text-[#EAEAEA]">{label}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div onClick={(e) => e.stopPropagation()}>
+            <Switch
+              checked={enabled}
+              onCheckedChange={onToggle}
+              className="scale-75"
+            />
+          </div>
+          <ChevronDown
+            size={14}
+            className={`text-[#7A7A7A] transition-transform duration-200 ${open ? '' : '-rotate-90'}`}
+          />
+        </div>
+      </div>
+
+      {/* Rule body */}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div
+              className={`px-5 pb-5 border-t border-[#1A1A1A] pt-5 ${!enabled ? 'opacity-30 pointer-events-none' : ''}`}
+            >
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Left accent glow when enabled */}
+      {enabled && (
+        <div className="absolute left-0 top-0 w-px h-full bg-emerald-400/30" />
+      )}
+    </motion.div>
+  );
+}
+
+/* ── METRIC SLIDER ROW ───────────────────────────────── */
+function MetricRow({
+  label,
+  value,
+  sub,
+  min,
+  max,
+  step,
+  onChange,
+  color = 'text-[#EAEAEA]',
+}: {
+  label: string;
+  value: number;
+  sub?: string;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  color?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <label className="text-xs text-[#7A7A7A]">
+          {label}
+          {sub && <span className="ml-1 text-[10px] text-[#7A7A7A]/60">{sub}</span>}
+        </label>
+        <span className={`text-sm font-mono font-medium ${color}`}>{value}</span>
+      </div>
+      <Slider
+        value={[value]}
+        onValueChange={(v) => onChange(v[0])}
+        min={min}
+        max={max}
+        step={step}
+        className="w-full"
+      />
+    </div>
+  );
+}
+
+/* ── DARK INPUT ──────────────────────────────────────── */
+function DarkInput({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div>
+      <label className="text-[9px] tracking-[0.2em] text-[#7A7A7A] uppercase mb-2 block">{label}</label>
+      <input
+        {...props}
+        className="w-full bg-[#050505] border border-[#1A1A1A] text-[#EAEAEA] text-sm px-3 py-2.5 font-mono placeholder-[#2A2A2A] outline-none focus:border-emerald-400/40 transition-colors duration-200"
+        style={{ appearance: 'none' }}
+      />
+    </div>
+  );
+}
+
+/* ── SUMMARY ROW ─────────────────────────────────────── */
+function SummaryRow({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="flex justify-between items-center py-2.5 border-b border-[#1A1A1A] last:border-0">
+      <span className="text-[10px] tracking-[0.15em] text-[#7A7A7A] uppercase">{label}</span>
+      <span className={`text-xs font-mono font-medium ${accent ? 'text-emerald-400' : 'text-[#EAEAEA]'}`}>{value}</span>
+    </div>
+  );
+}
+
+/* ── BUILDER VIEW ────────────────────────────────────── */
 export default function BuilderView({ setCurrentView }: BuilderViewProps) {
   const [symbol, setSymbol] = useState('AAPL');
   const [startDate, setStartDate] = useState('2015-01-01');
@@ -32,6 +181,12 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
   const [useMA, setUseMA] = useState(true);
   const [useRSI, setUseRSI] = useState(true);
   const [initialCapital, setInitialCapital] = useState(10000);
+  const [stopLoss, setStopLoss] = useState(false);
+  const [stopLossPercent, setStopLossPercent] = useState(10);
+  const [takeProfit, setTakeProfit] = useState(false);
+  const [takeProfitPercent, setTakeProfitPercent] = useState(20);
+  const [isRunning, setIsRunning] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
 
   const formatMonthYear = (dateStr: string) => {
     if (!dateStr) return '';
@@ -39,52 +194,27 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
     if (isNaN(date.getTime())) return '';
     return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   };
-  const [stopLoss, setStopLoss] = useState(false);
-  const [stopLossPercent, setStopLossPercent] = useState(10);
-  const [takeProfit, setTakeProfit] = useState(false);
-  const [takeProfitPercent, setTakeProfitPercent] = useState(20);
-  const dispatch = useDispatch<AppDispatch>()
 
-  
-   const handleRunBacktest = async () => {
-     const activeRules=[]
-     if (useMA) {
-       activeRules.push("MA Crossover") 
-     }
-     if (useRSI) {
-       activeRules.push("RSI Entry") 
-     }
-     if (stopLoss) {
-       activeRules.push("Stop Loss") 
-     }
-     const rulesConfig={
-       "rsi":{
-         "enabled": useRSI,
-         "period": rsiPeriod,
-         "buyBelow": rsiBuy,
-         "sellAbove": rsiSell
-       },
-       "maCross":{
-         "enabled": useMA,
-         "type": maType,
-         "fastPeriod": maShort,
-         "slowPeriod": maLong
-       }
-      }
-      const result= {
-        "symbol":symbol,
-        "startDate": startDate,
-        "endDate":endDate,
-        "capital":initialCapital,
-        "activeRules": activeRules,
-        "rulesConfig": rulesConfig
-      }
-    dispatch(clearBacktest())
+  const handleRunBacktest = async () => {
+    const activeRules = [];
+    if (useMA) activeRules.push('MA Crossover');
+    if (useRSI) activeRules.push('RSI Entry');
+    if (stopLoss) activeRules.push('Stop Loss');
+
+    const rulesConfig = {
+      rsi: { enabled: useRSI, period: rsiPeriod, buyBelow: rsiBuy, sellAbove: rsiSell },
+      maCross: { enabled: useMA, type: maType, fastPeriod: maShort, slowPeriod: maLong },
+    };
+
+    dispatch(clearBacktest());
+    setIsRunning(true);
     try {
-      await dispatch(runBacktest({ ...result })).unwrap()
-      setCurrentView('results')
+      await dispatch(runBacktest({ symbol, startDate, endDate, capital: initialCapital, activeRules, rulesConfig })).unwrap();
+      setCurrentView('results');
     } catch (err) {
-      console.error('Backtest failed', err)
+      console.error('Backtest failed', err);
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -107,217 +237,225 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
     setTakeProfitPercent(20);
   };
 
+  const tradingDays = startDate && endDate
+    ? Math.max(0, Math.floor((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000 * 5 / 7))
+    : 0;
+
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8 pb-12">
-      <motion.div 
-        className="mb-8"
-        initial={{ opacity: 0, y: 20 }}
+    <div className="max-w-6xl mx-auto px-6 py-8 pb-16">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="mb-10"
       >
-        <h1 className="text-3xl font-bold text-slate-900">Strategy Builder</h1>
-        <p className="text-slate-600 mt-1">Configure your trading parameters and run a 20-year backtest against the S&P 500.</p>
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-px h-4 bg-emerald-400/60" />
+          <p className="text-[11px] tracking-[0.25em] text-[#7A7A7A] uppercase font-medium">RULE CONFIGURATION</p>
+        </div>
+        <h1 className="text-4xl font-black tracking-[-0.04em] text-[#EAEAEA]">Strategy Builder</h1>
+        <p className="text-[#7A7A7A] mt-2 text-sm font-light">
+          Configure parameters and simulate against 20 years of S&P 500 history.
+        </p>
       </motion.div>
 
-      <motion.div 
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-      >
-        {/* Left column - Indicators */}
-        <div className="lg:col-span-2 space-y-6">
-          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
-            <label className="text-slate-900 font-semibold text-sm mb-2 block">Stock Symbol</label>
-            <Input
-              type="text"
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              placeholder="e.g. AAPL, GOOGL, TSLA"
-              className="uppercase"
-            />
-            <p className="text-slate-500 text-xs mt-2">Enter any valid US stock ticker symbol</p>
-          </motion.div>
-
-          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-slate-900 font-semibold text-sm mb-2 block">Start Date</label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-slate-900 font-semibold text-sm mb-2 block">End Date</label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ── LEFT: RULE BLOCKS ────────────────────── */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Asset + Date */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.05 }}
+            className="border border-[#1A1A1A] p-5"
+            style={{ background: '#0B0B0B' }}
+          >
+            <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase mb-4">ASSET · PERIOD</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <DarkInput
+                label="SYMBOL"
+                type="text"
+                value={symbol}
+                onChange={(e) => setSymbol((e.target as HTMLInputElement).value.toUpperCase())}
+                placeholder="AAPL"
+              />
+              <DarkInput
+                label="START DATE"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate((e.target as HTMLInputElement).value)}
+              />
+              <DarkInput
+                label="END DATE"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate((e.target as HTMLInputElement).value)}
+              />
             </div>
-            {startDate && endDate && (
-              <p className="text-slate-500 text-xs mt-3">
-                Approx. {Math.max(0, Math.floor((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24) * 5 / 7)).toLocaleString()} trading days
+            {tradingDays > 0 && (
+              <p className="text-[10px] font-mono text-[#7A7A7A] mt-3">
+                ≈ {tradingDays.toLocaleString()} TRADING DAYS
+                {symbol && <span className="text-emerald-400 ml-2">· {symbol}</span>}
               </p>
             )}
           </motion.div>
 
-          {/* RSI Config */}
-          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <div className="rounded-xl p-2.5 bg-indigo-100">
-                  <TrendingUp size={18} className="text-indigo-600" />
-                </div>
-                <div>
-                  <h2 className="text-slate-900 font-semibold">RSI (Relative Strength Index)</h2>
-                  <p className="text-slate-500 text-xs">Momentum oscillator · Buy low, sell high</p>
-                </div>
+          {/* RSI Rule */}
+          <RuleBlock
+            id="rsi"
+            label="RSI — Relative Strength Index"
+            tag="MOMENTUM RULE"
+            icon={TrendingUp}
+            enabled={useRSI}
+            onToggle={setUseRSI}
+          >
+            <div className="space-y-5">
+              <MetricRow
+                label="RSI Period"
+                value={rsiPeriod}
+                sub="days"
+                min={5}
+                max={30}
+                step={1}
+                onChange={setRsiPeriod}
+              />
+              <div className="grid grid-cols-2 gap-6">
+                <MetricRow
+                  label="Buy Below"
+                  value={rsiBuy}
+                  sub="(oversold)"
+                  min={10}
+                  max={50}
+                  step={1}
+                  onChange={setRsiBuy}
+                  color="text-emerald-400"
+                />
+                <MetricRow
+                  label="Sell Above"
+                  value={rsiSell}
+                  sub="(overbought)"
+                  min={50}
+                  max={95}
+                  step={1}
+                  onChange={setRsiSell}
+                  color="text-red-400"
+                />
               </div>
-              <Switch checked={useRSI} onCheckedChange={setUseRSI} />
-            </div>
-
-            <div className={`space-y-5 ${!useRSI ? 'opacity-40 pointer-events-none' : ''}`}>
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-slate-600 text-sm">RSI Period</label>
-                  <span className="text-slate-800 text-sm font-medium">{rsiPeriod} days</span>
-                </div>
-                <Slider value={[rsiPeriod]} onValueChange={v => setRsiPeriod(v[0])} min={5} max={30} step={1} className="w-full" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <label className="text-slate-600 text-sm flex items-center gap-1">
-                      Buy Below <span className="text-emerald-600 text-xs">(Oversold)</span>
-                    </label>
-                    <span className="text-emerald-600 text-sm font-medium">{rsiBuy}</span>
-                  </div>
-                  <Slider value={[rsiBuy]} onValueChange={v => setRsiBuy(v[0])} min={10} max={50} step={1} />
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <label className="text-slate-600 text-sm flex items-center gap-1">
-                      Sell Above <span className="text-rose-600 text-xs">(Overbought)</span>
-                    </label>
-                    <span className="text-rose-600 text-sm font-medium">{rsiSell}</span>
-                  </div>
-                  <Slider value={[rsiSell]} onValueChange={v => setRsiSell(v[0])} min={50} max={95} step={1} />
-                </div>
-              </div>
-              <div className="bg-slate-100/50 rounded-xl p-3 flex items-start gap-2">
-                <Info size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
-                <p className="text-slate-500 text-xs leading-relaxed">
-                  Buy when RSI drops below {rsiBuy} (stock looks oversold). Sell when RSI rises above {rsiSell} (stock looks overbought).
+              <div className="flex items-start gap-2 border border-[#1A1A1A] p-3">
+                <Info size={11} className="text-[#7A7A7A] mt-0.5 flex-shrink-0" />
+                <p className="text-[10px] text-[#7A7A7A] leading-relaxed">
+                  BUY when RSI &lt; {rsiBuy} (oversold signal). SELL when RSI &gt; {rsiSell} (overbought signal). Period: {rsiPeriod} days.
                 </p>
               </div>
             </div>
-          </motion.div>
+          </RuleBlock>
 
-          {/* Moving Average Config */}
-          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <div className="rounded-xl p-2.5 bg-cyan-100">
-                  <Activity size={18} className="text-cyan-600" />
-                </div>
-                <div>
-                  <h2 className="text-slate-900 font-semibold">Moving Average Crossover</h2>
-                  <p className="text-slate-500 text-xs">Trend-following · Golden Cross / Death Cross</p>
-                </div>
-              </div>
-              <Switch checked={useMA} onCheckedChange={setUseMA} />
-            </div>
-
-            <div className={`space-y-5 ${!useMA ? 'opacity-40 pointer-events-none' : ''}`}>
+          {/* MA Crossover Rule */}
+          <RuleBlock
+            id="ma"
+            label="MA Crossover — Golden / Death Cross"
+            tag="TREND RULE"
+            icon={Activity}
+            enabled={useMA}
+            onToggle={setUseMA}
+          >
+            <div className="space-y-5">
               <div>
-                <label className="text-slate-600 text-sm mb-2 block">MA Type</label>
+                <p className="text-[10px] tracking-[0.15em] text-[#7A7A7A] uppercase mb-2">MA Type</p>
                 <Select value={maType} onValueChange={setMaType}>
-                  <SelectTrigger className="bg-slate-100 border-slate-200 text-slate-800 w-40">
+                  <SelectTrigger className="bg-[#050505] border-[#1A1A1A] text-[#EAEAEA] text-xs font-mono w-44 rounded-none">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-100 border-slate-200">
-                    <SelectItem value="SMA" className="text-slate-800">SMA (Simple)</SelectItem>
-                    <SelectItem value="EMA" className="text-slate-800">EMA (Exponential)</SelectItem>
+                  <SelectContent className="bg-[#0B0B0B] border-[#1A1A1A] rounded-none">
+                    <SelectItem value="SMA" className="text-[#EAEAEA] text-xs font-mono focus:bg-[#1A1A1A] focus:text-emerald-400">SMA — Simple</SelectItem>
+                    <SelectItem value="EMA" className="text-[#EAEAEA] text-xs font-mono focus:bg-[#1A1A1A] focus:text-emerald-400">EMA — Exponential</SelectItem>
                   </SelectContent>
                 </Select>
-                <div className="bg-slate-100/50 rounded-xl p-3 flex items-start gap-2 mt-3">
-                  <Info size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-slate-500 text-xs leading-relaxed">
-                    {maType === 'SMA'
-                      ? 'Gives equal weight to all days in the period. Slower to react, less noise.'
-                      : 'Gives more weight to recent days. Reacts faster to price changes, more sensitive.'}
-                  </p>
-                </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <label className="text-slate-600 text-sm">Short Period</label>
-                    <span className="text-cyan-600 text-sm font-medium">{maShort} days</span>
-                  </div>
-                  <Slider value={[maShort]} onValueChange={v => setMaShort(v[0])} min={10} max={100} step={5} />
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <label className="text-slate-600 text-sm">Long Period</label>
-                    <span className="text-cyan-600 text-sm font-medium">{maLong} days</span>
-                  </div>
-                  <Slider value={[maLong]} onValueChange={v => setMaLong(v[0])} min={100} max={400} step={10} />
-                </div>
+              <div className="grid grid-cols-2 gap-6">
+                <MetricRow
+                  label="Short Period"
+                  value={maShort}
+                  sub="days"
+                  min={10}
+                  max={100}
+                  step={5}
+                  onChange={setMaShort}
+                  color="text-emerald-400"
+                />
+                <MetricRow
+                  label="Long Period"
+                  value={maLong}
+                  sub="days"
+                  min={100}
+                  max={400}
+                  step={10}
+                  onChange={setMaLong}
+                  color="text-[#EAEAEA]"
+                />
               </div>
-              <div className="bg-slate-100/50 rounded-xl p-3 flex items-start gap-2">
-                <Info size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
-                <p className="text-slate-500 text-xs leading-relaxed">
-                  Buy when the {maShort}-day {maType} crosses above the {maLong}-day {maType} (Golden Cross). Sell on the opposite (Death Cross).
+              <div className="flex items-start gap-2 border border-[#1A1A1A] p-3">
+                <Info size={11} className="text-[#7A7A7A] mt-0.5 flex-shrink-0" />
+                <p className="text-[10px] text-[#7A7A7A] leading-relaxed">
+                  BUY on Golden Cross ({maShort}d crosses above {maLong}d {maType}). SELL on Death Cross (opposite).
                 </p>
               </div>
             </div>
-          </motion.div>
+          </RuleBlock>
 
           {/* Risk Management */}
-          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <div className="rounded-xl p-2.5 bg-rose-100">
-                <TrendingDown size={18} className="text-rose-600" />
-              </div>
-              <div>
-                <h2 className="text-slate-900 font-semibold">Risk Management</h2>
-                <p className="text-slate-500 text-xs">Stop-loss and take-profit rules</p>
-              </div>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.3 }}
+            className="border border-[#1A1A1A] p-5"
+            style={{ background: '#0B0B0B' }}
+          >
+            <div className="flex items-center gap-3 mb-5">
+              <TrendingDown size={13} className="text-red-400" />
+              <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase font-medium">RISK MANAGEMENT</p>
             </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-slate-100/40 rounded-xl">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-3 border-b border-[#1A1A1A]">
                 <div className="flex items-center gap-3">
-                  <Checkbox checked={stopLoss} onCheckedChange={(v) => setStopLoss(v as boolean)} />
+                  <Checkbox
+                    checked={stopLoss}
+                    onCheckedChange={(v) => setStopLoss(v as boolean)}
+                    className="border-[#2A2A2A] data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                  />
                   <div>
-                    <p className="text-slate-800 text-sm font-medium">Stop-Loss</p>
-                    <p className="text-slate-500 text-xs">Auto-sell if position drops by threshold</p>
+                    <p className="text-xs text-[#EAEAEA] font-medium">Stop-Loss</p>
+                    <p className="text-[10px] text-[#7A7A7A]">Auto-exit on position loss</p>
                   </div>
                 </div>
                 {stopLoss && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-rose-600 text-sm font-medium">-{stopLossPercent}%</span>
-                    <Slider value={[stopLossPercent]} onValueChange={v => setStopLossPercent(v[0])} min={2} max={30} step={1} className="w-24" />
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-red-400">-{stopLossPercent}%</span>
+                    <div className="w-24">
+                      <Slider value={[stopLossPercent]} onValueChange={(v) => setStopLossPercent(v[0])} min={2} max={30} step={1} />
+                    </div>
                   </div>
                 )}
               </div>
-              <div className="flex items-center justify-between p-3 bg-slate-100/40 rounded-xl">
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <Checkbox checked={takeProfit} onCheckedChange={(v) => setTakeProfit(v as boolean)} />
+                  <Checkbox
+                    checked={takeProfit}
+                    onCheckedChange={(v) => setTakeProfit(v as boolean)}
+                    className="border-[#2A2A2A] data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                  />
                   <div>
-                    <p className="text-slate-800 text-sm font-medium">Take-Profit</p>
-                    <p className="text-slate-500 text-xs">Auto-sell if position gains by threshold</p>
+                    <p className="text-xs text-[#EAEAEA] font-medium">Take-Profit</p>
+                    <p className="text-[10px] text-[#7A7A7A]">Auto-exit on gain target</p>
                   </div>
                 </div>
                 {takeProfit && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-emerald-600 text-sm font-medium">+{takeProfitPercent}%</span>
-                    <Slider value={[takeProfitPercent]} onValueChange={v => setTakeProfitPercent(v[0])} min={5} max={50} step={1} className="w-24" />
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-emerald-400">+{takeProfitPercent}%</span>
+                    <div className="w-24">
+                      <Slider value={[takeProfitPercent]} onValueChange={(v) => setTakeProfitPercent(v[0])} min={5} max={50} step={1} />
+                    </div>
                   </div>
                 )}
               </div>
@@ -325,102 +463,123 @@ export default function BuilderView({ setCurrentView }: BuilderViewProps) {
           </motion.div>
         </div>
 
-        {/* Right column - Summary & Actions */}
-        <div className="space-y-6">
-          {/* Capital & Fees */}
-          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
+        {/* ── RIGHT: SUMMARY PANEL ─────────────────── */}
+        <div className="space-y-4">
+          {/* Capital */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.1 }}
+            className="border border-[#1A1A1A] p-5"
+            style={{ background: '#0B0B0B' }}
+          >
             <div className="flex items-center gap-2 mb-4">
-              <DollarSign size={18} className="text-indigo-600" />
-              <h2 className="text-slate-900 font-semibold">Capital & Fees</h2>
+              <DollarSign size={13} className="text-emerald-400" />
+              <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase">CAPITAL · FEES</p>
             </div>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <label className="text-slate-600 text-sm">Starting Capital</label>
-                  <span className="text-slate-800 text-sm font-medium">${initialCapital.toLocaleString()}</span>
-                </div>
-                <Slider value={[initialCapital]} onValueChange={v => setInitialCapital(v[0])} min={1000} max={100000} step={1000} />
-              </div>
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-xs text-[#7A7A7A]">Starting Capital</span>
+              <span className="text-sm font-mono font-medium text-emerald-400">${initialCapital.toLocaleString()}</span>
             </div>
+            <Slider
+              value={[initialCapital]}
+              onValueChange={(v) => setInitialCapital(v[0])}
+              min={1000}
+              max={100000}
+              step={1000}
+            />
+            <p className="text-[10px] text-[#7A7A7A] mt-3">
+              Fee structure: 0.1% per trade (slippage included)
+            </p>
           </motion.div>
 
           {/* Strategy Summary */}
-          <motion.div variants={fadeUp} className="bg-white border border-slate-200/50 rounded-2xl p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.15 }}
+            className="border border-[#1A1A1A] p-5"
+            style={{ background: '#0B0B0B' }}
+          >
             <div className="flex items-center gap-2 mb-4">
-              <Sliders size={18} className="text-indigo-600" />
-              <h2 className="text-slate-900 font-semibold">Strategy Summary</h2>
+              <Sliders size={13} className="text-[#7A7A7A]" />
+              <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase">RULE SUMMARY</p>
             </div>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between py-2 border-b border-slate-200">
-                <span className="text-slate-600">Symbol</span>
-                <span className="text-slate-800">{symbol || '—'}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-200">
-                <span className="text-slate-600">Period</span>
-                <span className="text-slate-800">{startDate && endDate ? `${formatMonthYear(startDate)} — ${formatMonthYear(endDate)}` : '—'}</span>
-              </div>
-              {useRSI && (
-                <div className="flex justify-between py-2 border-b border-slate-200">
-                  <span className="text-slate-600">RSI</span>
-                  <span className="text-slate-800">Buy &lt;{rsiBuy}, Sell &gt;{rsiSell} ({rsiPeriod}d)</span>
-                </div>
-              )}
-              {useMA && (
-                <div className="flex justify-between py-2 border-b border-slate-200">
-                  <span className="text-slate-600">MA Cross</span>
-                  <span className="text-slate-800">{maType} {maShort}/{maLong}</span>
-                </div>
-              )}
-              {stopLoss && (
-                <div className="flex justify-between py-2 border-b border-slate-200">
-                  <span className="text-slate-600">Stop-Loss</span>
-                  <span className="text-rose-600">-{stopLossPercent}%</span>
-                </div>
-              )}
-              {takeProfit && (
-                <div className="flex justify-between py-2 border-b border-slate-200">
-                  <span className="text-slate-600">Take-Profit</span>
-                  <span className="text-emerald-600">+{takeProfitPercent}%</span>
-                </div>
-              )}
-              <div className="flex justify-between py-2">
-                <span className="text-slate-600">Capital</span>
-                <span className="text-slate-800">${initialCapital.toLocaleString()}</span>
-              </div>
+            <div className="space-y-0">
+              <SummaryRow label="ASSET" value={symbol || '—'} />
+              <SummaryRow
+                label="PERIOD"
+                value={startDate && endDate ? `${formatMonthYear(startDate)} — ${formatMonthYear(endDate)}` : '—'}
+              />
+              {useRSI && <SummaryRow label="RSI" value={`<${rsiBuy} / >${rsiSell} (${rsiPeriod}d)`} accent />}
+              {useMA && <SummaryRow label="MA CROSS" value={`${maType} ${maShort}/${maLong}`} accent />}
+              {stopLoss && <SummaryRow label="STOP-LOSS" value={`-${stopLossPercent}%`} />}
+              {takeProfit && <SummaryRow label="TAKE-PROFIT" value={`+${takeProfitPercent}%`} />}
+              <SummaryRow label="CAPITAL" value={`$${initialCapital.toLocaleString()}`} />
             </div>
+
             {!useRSI && !useMA && (
-              <div className="bg-amber-500/10 border border-amber-200 rounded-xl p-3 mt-4 flex items-start gap-2">
-                <Info size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-amber-800/80 text-xs">Enable at least one indicator to run a backtest.</p>
+              <div className="flex items-start gap-2 border border-red-900/40 bg-red-950/20 p-3 mt-4">
+                <Info size={11} className="text-red-400 mt-0.5 flex-shrink-0" />
+                <p className="text-[10px] text-red-400">Enable at least one indicator to run simulation.</p>
               </div>
             )}
           </motion.div>
 
           {/* Actions */}
-          <motion.div variants={fadeUp} className="space-y-3">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.2 }}
+            className="space-y-3"
+          >
             <button
+              id="builder-run-backtest"
               onClick={handleRunBacktest}
-              disabled={(!useRSI && !useMA) || !symbol || !startDate || !endDate}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 disabled:text-slate-500 text-white font-semibold py-3.5 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 text-sm shadow-[0_0_30px_rgba(99,102,241,0.2)]"
+              disabled={(!useRSI && !useMA) || !symbol || !startDate || !endDate || isRunning}
+              className="w-full flex items-center justify-center gap-2 py-4 text-sm font-bold tracking-wider transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{
+                background: isRunning ? '#0B2A1A' : '#34d399',
+                color: isRunning ? '#34d399' : '#050505',
+                clipPath: isRunning ? 'none' : 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)',
+              }}
             >
-              <Play size={16} /> Run Backtest
+              {isRunning ? (
+                <>
+                  <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                  SIMULATING...
+                </>
+              ) : (
+                <>
+                  <Play size={13} />
+                  RUN SIMULATION
+                </>
+              )}
             </button>
             <button
+              id="builder-reset"
               onClick={handleReset}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 text-sm border border-slate-200"
+              className="w-full flex items-center justify-center gap-2 py-3 text-xs font-medium tracking-wider text-[#7A7A7A] border border-[#1A1A1A] hover:border-[#2A2A2A] hover:text-[#EAEAEA] transition-all duration-200"
             >
-              <RotateCcw size={14} /> Reset to Defaults
+              <RotateCcw size={11} />
+              RESET DEFAULTS
             </button>
           </motion.div>
 
-          {/* Tip */}
-          <motion.div variants={fadeUp} className="bg-indigo-500/10 border border-indigo-200 rounded-xl p-4">
-            <p className="text-indigo-800/80 text-xs leading-relaxed">
-              <strong className="text-indigo-700">Pro tip:</strong> The more parameters you tweak, the more likely you're overfitting to historical data. Simple strategies are usually more robust.
+          {/* Analysis note */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.35, delay: 0.3 }}
+            className="border border-[#1A1A1A] p-4"
+          >
+            <p className="text-[9px] tracking-[0.2em] text-[#7A7A7A] uppercase mb-2">ANALYSIS OUTPUT</p>
+            <p className="text-[10px] text-[#7A7A7A] leading-relaxed font-light">
+              Increasing parameter complexity raises the risk of curve-fitting. Simple rules tend to generalize better across unseen market conditions.
             </p>
           </motion.div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

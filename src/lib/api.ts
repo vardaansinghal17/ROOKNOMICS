@@ -1,6 +1,6 @@
 // src/lib/api.ts
 
-const BASE_URL = import.meta.env.VITE_API_URL||'http://localhost:3000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // ── Core request helper ───────────────────────────────────
 export async function apiRequest<T = any>(
@@ -27,11 +27,18 @@ export async function apiRequest<T = any>(
   return data;
 }
 
-// ── Shared user type ──────────────────────────────────────
+// ── Shared types ──────────────────────────────────────────
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  avatar?: string | null;
+}
+
+export interface GoogleAuthPayload {
+  googleId: string;
+  email: string;
+  name: string;
   avatar?: string;
 }
 
@@ -66,7 +73,14 @@ export const authApi = {
       body: JSON.stringify(payload),
     }),
 
-  // Protected — get current user from JWT
+  // Google OAuth — send decoded Google user payload, get JWT back
+  googleAuth: (payload: GoogleAuthPayload) =>
+    apiRequest<{ token: string; user: AuthUser }>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  // Protected — get current user from stored JWT (validates token server-side)
   getMe: () =>
     apiRequest<{ user: AuthUser }>('/auth/me'),
 };

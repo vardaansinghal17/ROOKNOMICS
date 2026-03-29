@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
+import type { ChangeEvent, ElementType } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/store';
+import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
 import { fadeUp, staggerContainer } from '@/lib/animations';
 import {
@@ -13,6 +15,7 @@ import {
   GitBranch,
   Lightbulb,
   LogIn,
+  LogOut,
   Menu,
   Search,
   Shield,
@@ -43,7 +46,7 @@ import {
   PolarRadiusAxis,
   Radar
 } from 'recharts';
-import type { DashboardMetrics, SeriesDay, TradeRow } from '@/components/ResultDashboard';
+import type { DashboardMetrics, RiskStats, SeriesDay, TradeRow } from '@/components/ResultDashboard';
 
 export type BacktestResult = Record<string, unknown>;
 export type UnknownRecord = Record<string, unknown>;
@@ -52,6 +55,7 @@ export type CandidateArray = { key: string; value: any };
 import LandingView from '@/components/LandingView';
 import BuilderView from '@/components/BuilderView';
 import AuthDialog from '@/components/AuthDialog';
+import ProfileView from '@/components/ProfileView';
 import {
   generateEquityData, tradeHistory, radarData, conceptCards,
   metricsStrategy, metricsSP500,
@@ -61,9 +65,9 @@ import { useMarketNews } from '@/hooks/useMarketNews';
 import { formatNewsDate, getPlaceholderGradient } from '@/utils/newsHelpers';
 
 
-type ViewType = 'landing' | 'builder' | 'results' | 'news' | 'learn';
+type ViewType = 'landing' | 'builder' | 'results' | 'news' | 'learn' | 'profile';
 
-const iconMap: Record<string, React.ElementType> = {
+const iconMap: Record<string, ElementType> = {
   TrendingUp,
   Activity,
   TrendingDown,
@@ -116,13 +120,26 @@ function asNullableNumber(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+function readDateField(row: UnknownRecord) {
+  return (
+    row.date ??
+    row.Date ??
+    row.datetime ??
+    row.dateTime ??
+    row.timestamp ??
+    row.time ??
+    row.label ??
+    row.month
+  )
+}
+
 function normaliseDate(value: unknown, fallbackIndex: number): string {
   if (typeof value === 'string' && value.trim()) {
     const parsed = new Date(value)
     if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10)
     return value
   }
-  return `Point-${fallbackIndex + 1}`
+  return 'Point-' + (fallbackIndex + 1)
 }
 
 function readArray<T = Record<string, unknown>>(source: BacktestResult | null, keys: string[]): T[] {
@@ -158,6 +175,13 @@ function getCandidateObjects(source: BacktestResult | null): UnknownRecord[] {
       const nested = current[key]
       if (isRecord(nested) && !seen.has(nested)) {
         queue.push(nested)
+      }
+    }
+
+    for (const [key, value] of Object.entries(current)) {
+      if (priorityKeys.includes(key)) continue
+      if (isRecord(value) && !seen.has(value)) {
+        queue.push(value)
       }
     }
   }
@@ -206,10 +230,7 @@ function arrayToSeries(rows: unknown[], preferredValueKeys: string[]): SeriesDay
 
   if (objectRows.length) {
     const points = objectRows.map((row, index) => ({
-      date: normaliseDate(
-        row.date ?? row.datetime ?? row.timestamp ?? row.time ?? row.label ?? row.month,
-        index
-      ),
+      date: normaliseDate(readDateField(row), index),
       value: firstNumericField(row, preferredValueKeys),
     })).filter((point) => Number.isFinite(point.value))
 
@@ -218,7 +239,7 @@ function arrayToSeries(rows: unknown[], preferredValueKeys: string[]): SeriesDay
 
   const primitiveRows = rows
     .map((value, index) => ({
-      date: `Point-${index + 1}`,
+      date: 'Point-' + (index + 1),
       value: asNumber(value, Number.NaN),
     }))
     .filter((point) => Number.isFinite(point.value))
@@ -273,10 +294,7 @@ function extractSeries(source: BacktestResult | null, keys: string[], valueKeys:
         }
 
         return {
-          date: normaliseDate(
-            row.date ?? row.datetime ?? row.timestamp ?? row.label ?? row.month,
-            index
-          ),
+          date: normaliseDate(readDateField(row), index),
           value,
         }
       })
@@ -314,10 +332,7 @@ function extractCombinedDataSeries(
 
   const points = rows
     .map((row, index) => ({
-      date: normaliseDate(
-        row.date ?? row.datetime ?? row.timestamp ?? row.time ?? row.label ?? row.month,
-        index
-      ),
+      date: normaliseDate(readDateField(row), index),
       value: firstNumericField(row, valueCandidates),
     }))
     .filter((point) => Number.isFinite(point.value))
@@ -522,7 +537,7 @@ function buildTradeLog(source: BacktestResult | null, portfolioSeries: SeriesDay
   const cumulativeByDate = new Map(portfolioSeries.map((point) => [point.date, point.value]))
 
   return rows.map((row, index) => {
-    const date = normaliseDate(row.date ?? row.datetime ?? row.timestamp, index)
+    const date = normaliseDate(readDateField(row), index)
     const action = String(row.action ?? row.side ?? row.type).toUpperCase() === 'SELL' ? 'SELL' : 'BUY'
     const price = asNumber(row.price ?? row.executionPrice ?? row.fillPrice)
     const shares = asNullableNumber(row.shares ?? row.quantity ?? row.qty ?? row.units)
@@ -544,6 +559,46 @@ function buildTradeLog(source: BacktestResult | null, portfolioSeries: SeriesDay
   })
 }
 
+function buildPortfolioSeriesFromTradeLog(trades: TradeRow[], startingCapital = 10000): SeriesDay[] {
+  if (!trades.length) return []
+
+  let runningValue = startingCapital
+
+  const points = trades.map((trade, index) => {
+    if (trade.cumulative !== null && trade.cumulative !== undefined && Number.isFinite(trade.cumulative)) {
+      runningValue = trade.cumulative
+    } else if (trade.pnl !== null && trade.pnl !== undefined && Number.isFinite(trade.pnl)) {
+      runningValue += trade.pnl
+    }
+
+    return {
+      date: normaliseDate(trade.date, index),
+      value: runningValue,
+    }
+  })
+
+  return sortSeries(points.filter((point) => Number.isFinite(point.value) && point.value > 0))
+}
+
+function buildBenchmarkSeriesFromReturn(
+  portfolioSeries: SeriesDay[],
+  benchmarkReturn: number,
+  startingCapital: number
+): SeriesDay[] {
+  if (!portfolioSeries.length || !Number.isFinite(startingCapital) || startingCapital <= 0) return []
+
+  const finalValue = startingCapital * (1 + benchmarkReturn / 100)
+  const lastIndex = Math.max(1, portfolioSeries.length - 1)
+
+  return portfolioSeries.map((point, index) => {
+    const progress = index / lastIndex
+    return {
+      date: point.date,
+      value: startingCapital + (finalValue - startingCapital) * progress,
+    }
+  })
+}
+
 function buildMetrics(
   metricsSource: Record<string, unknown> | null,
   series: SeriesDay[],
@@ -551,9 +606,11 @@ function buildMetrics(
   fallbackTradeCount: number,
   fallbackOverrides?: Partial<DashboardMetrics>
 ): DashboardMetrics {
-  const totalReturn = metricsSource
-    ? asNumber(metricsSource.totalReturn ?? metricsSource.total_return ?? metricsSource.returnPct ?? metricsSource.return_percent, fallbackOverrides?.totalReturn ?? calculateTotalReturn(series))
-    : (fallbackOverrides?.totalReturn ?? calculateTotalReturn(series))
+  const totalReturn = fallbackOverrides?.totalReturn ?? (
+    metricsSource
+      ? asNumber(metricsSource.totalReturn ?? metricsSource.total_return ?? metricsSource.returnPct ?? metricsSource.return_percent, calculateTotalReturn(series))
+      : calculateTotalReturn(series)
+  )
   const annualizedReturn = metricsSource
     ? asNumber(metricsSource.annualizedReturn ?? metricsSource.annualized_return, fallbackOverrides?.annualizedReturn ?? calculateAnnualizedReturn(series))
     : (fallbackOverrides?.annualizedReturn ?? calculateAnnualizedReturn(series))
@@ -589,6 +646,23 @@ function buildMetrics(
 }
 
 function getMetricsSource(source: BacktestResult | null, keys: string[]) {
+  const isBench = keys.some(k => k.toLowerCase().includes('benchmark') || k.toLowerCase().includes('sp500'))
+  
+  for (const candidate of getCandidateObjects(source)) {
+    if (isBench && isRecord(candidate.benchmark)) return candidate.benchmark as Record<string, unknown>
+    if (!isBench && isRecord(candidate.strategy)) return candidate.strategy as Record<string, unknown>
+    
+    if (isRecord(candidate.performance)) {
+      if (isBench) {
+        if (isRecord(candidate.performance.benchmark)) return candidate.performance.benchmark as Record<string, unknown>
+        if (isRecord(candidate.performance.sp500)) return candidate.performance.sp500 as Record<string, unknown>
+      } else {
+        if (isRecord(candidate.performance.strategy)) return candidate.performance.strategy as Record<string, unknown>
+        if (isRecord(candidate.performance.portfolio)) return candidate.performance.portfolio as Record<string, unknown>
+      }
+    }
+  }
+
   for (const candidate of getCandidateObjects(source)) {
     for (const key of keys) {
       const value = candidate[key]
@@ -618,22 +692,70 @@ function getBenchmarkSummary(source: BacktestResult | null) {
   return null
 }
 
+function getExplicitBenchmarkReturn(source: BacktestResult | null): number | null {
+  for (const candidate of getCandidateObjects(source)) {
+    const direct = asNullableNumber(
+      candidate.benchmarkReturn ??
+      candidate.benchmark_return ??
+      candidate.sp500Return ??
+      candidate.sp500_return ??
+      candidate.buyHoldReturn ??
+      candidate.buy_hold_return
+    )
+    if (direct !== null) return direct
+
+    const benchmark = candidate.benchmark
+    if (isRecord(benchmark)) {
+      const nested = asNullableNumber(
+        benchmark.totalReturn ??
+        benchmark.total_return ??
+        benchmark.returnPct ??
+        benchmark.return_percent ??
+        benchmark.benchmark ??
+        benchmark.sp500 ??
+        benchmark.buyHold
+      )
+      if (nested !== null) return nested
+    }
+
+    const performance = candidate.performance
+    if (isRecord(performance)) {
+      const nested = performance.benchmark ?? performance.sp500 ?? performance.buyHold
+      if (isRecord(nested)) {
+        const value = asNullableNumber(
+          nested.totalReturn ??
+          nested.total_return ??
+          nested.returnPct ??
+          nested.return_percent
+        )
+        if (value !== null) return value
+      }
+    }
+  }
+
+  return null
+}
+
 function getResultsData(source: BacktestResult | null) {
   const combinedPortfolioSeries = extractCombinedDataSeries(source, 'strategy')
   const combinedBenchmarkSeries = extractCombinedDataSeries(source, 'benchmark')
 
-  const portfolioSeries = combinedPortfolioSeries.length ? combinedPortfolioSeries : extractSeries(
+  const extractedPortfolioSeries = combinedPortfolioSeries.length ? combinedPortfolioSeries : extractSeries(
     source,
     ['combinedData', 'portfolioSeries', 'portfolio_series', 'equityCurve', 'equity_curve', 'portfolio'],
     ['value', 'portfolioValue', 'equity', 'close']
   )
-  const benchmarkSeries = combinedBenchmarkSeries.length ? combinedBenchmarkSeries : extractSeries(
+  const extractedBenchmarkSeries = combinedBenchmarkSeries.length ? combinedBenchmarkSeries : extractSeries(
     source,
     ['combinedData', 'benchmarkSeries', 'benchmark_series', 'benchmarkCurve', 'benchmark_curve', 'benchmark', 'sp500'],
     ['value', 'benchmarkValue', 'equity', 'close']
   )
-  const tradeLog = buildTradeLog(source, portfolioSeries)
+  const tradeLog = buildTradeLog(source, extractedPortfolioSeries)
+  const portfolioSeries = extractedPortfolioSeries.length
+    ? extractedPortfolioSeries
+    : buildPortfolioSeriesFromTradeLog(tradeLog)
   const benchmarkSummary = getBenchmarkSummary(source)
+  const explicitBenchmarkReturn = getExplicitBenchmarkReturn(source)
 
   const portfolioMetrics = buildMetrics(
     getMetricsSource(source, ['portfolioMatrics', 'portfolioMetrics', 'portfolio_metrics', 'strategyMetrics', 'strategy_metrics', 'metrics']),
@@ -643,14 +765,18 @@ function getResultsData(source: BacktestResult | null) {
   )
   const benchmarkMetrics = buildMetrics(
     getMetricsSource(source, ['benchmarkMatrics', 'benchmarkMetrics', 'benchmark_metrics', 'sp500Metrics', 'sp500_metrics']),
-    benchmarkSeries,
+    extractedBenchmarkSeries,
     [],
-    benchmarkSeries.length ? 1 : 0,
+    extractedBenchmarkSeries.length ? 1 : 0,
     {
-      totalReturn: benchmarkSummary ? asNumber(benchmarkSummary.benchmark, calculateTotalReturn(benchmarkSeries)) : undefined,
+      totalReturn: explicitBenchmarkReturn ?? (benchmarkSummary ? asNumber(benchmarkSummary.benchmark, calculateTotalReturn(extractedBenchmarkSeries)) : undefined),
       totalTrades: 1,
     }
   )
+  const portfolioStart = portfolioSeries[0]?.value ?? 10000
+  const benchmarkSeries = extractedBenchmarkSeries.length
+    ? extractedBenchmarkSeries
+    : buildBenchmarkSeriesFromReturn(portfolioSeries, benchmarkMetrics.totalReturn, portfolioStart)
 
   const riskStats = portfolioSeries.length && benchmarkSeries.length
     ? buildRiskStats(portfolioMetrics, benchmarkMetrics, portfolioSeries, benchmarkSeries)
@@ -660,13 +786,14 @@ function getResultsData(source: BacktestResult | null) {
     portfolioSeries,
     benchmarkSeries,
     tradeLog,
-    portfolioMetrics: portfolioSeries.length ? portfolioMetrics : emptyMetrics,
-    benchmarkMetrics: benchmarkSeries.length ? benchmarkMetrics : emptyMetrics,
+    portfolioMetrics,
+    benchmarkMetrics,
     riskStats,
     parsedDataAvailable: Boolean(
       portfolioSeries.length ||
       benchmarkSeries.length ||
-      tradeLog.length
+      tradeLog.length ||
+      (portfolioMetrics.totalReturn !== undefined && portfolioMetrics.totalReturn !== null)
     ),
   }
 }
@@ -687,6 +814,49 @@ export default function App() {
   const [learnSearch, setLearnSearch] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
+  const [authContext, setAuthContext] = useState<'gate' | undefined>(undefined)
+  const [pendingView, setPendingView] = useState<ViewType | null>(null)
+
+  const { isLoggedIn, user, handleLogout, fetchCurrentUser, token } = useAuth()
+
+  // On mount: if a token exists, validate it server-side via GET /api/auth/me.
+  // This catches expired tokens and refreshes user data after a page reload.
+  useEffect(() => {
+    if (token) fetchCurrentUser();
+  }, [])
+
+  // When login succeeds while a protected view is pending, navigate there
+  useEffect(() => {
+    if (isLoggedIn && pendingView) {
+      setCurrentView(pendingView)
+      setPendingView(null)
+      setShowAuth(false)
+    }
+  }, [isLoggedIn])
+
+  // If user logs out while on builder or profile, send them home
+  useEffect(() => {
+    if (!isLoggedIn && (currentView === 'builder' || currentView === 'profile')) {
+      setCurrentView('landing')
+    }
+  }, [isLoggedIn])
+
+  // Auth-guarded navigation — intercept protected views
+  const handleNavigate = (view: ViewType) => {
+    if (view === 'builder' && !isLoggedIn) {
+      setPendingView('builder')
+      setAuthContext('gate')
+      setShowAuth(true)
+      setMobileMenuOpen(false)
+      return
+    }
+    setCurrentView(view)
+    setMobileMenuOpen(false)
+  }
+
+  const userInitials = user?.name
+    ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?'
 
   const backtestState = useSelector((state: RootState) => state.backtest)
 
@@ -698,7 +868,7 @@ export default function App() {
   const [metricTab, setMetricTab] = useState<'strategy' | 'sp500'>('strategy')
 
   const equityData = useMemo(() => {
-    if (resultsData.parsedDataAvailable) {
+    if (resultsData.parsedDataAvailable && resultsData.portfolioSeries.length > 0) {
       return resultsData.portfolioSeries.map((p, i) => ({
         month: i,
         user: p.value,
@@ -706,12 +876,10 @@ export default function App() {
         label: p.date || ''
       }));
     }
-    return generateEquityData();
+    return null; // no fallback to fake data
   }, [resultsData]);
 
-  const metrics = resultsData.parsedDataAvailable
-    ? (metricTab === 'strategy' ? resultsData.portfolioMetrics : resultsData.benchmarkMetrics)
-    : (metricTab === 'strategy' ? metricsStrategy : metricsSP500);
+  const metrics = metricTab === 'strategy' ? resultsData.portfolioMetrics : resultsData.benchmarkMetrics;
 
   const filteredConcepts = useMemo(() => {
     return conceptCards.filter((card) => {
@@ -733,68 +901,138 @@ export default function App() {
     ? conceptCards.find((card) => card.id === expandedConcept) ?? null
     : null
 
+  const navLabels: Record<ViewType, string> = {
+    landing: 'HOME', builder: 'BUILDER', results: 'RESULTS', news: 'NEWS', learn: 'LEARN', profile: 'PROFILE',
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 noise-bg relative">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-50/80 backdrop-blur-xl border-b border-slate-200/50">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('landing')}>
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
-              <BarChart2 size={16} className="text-white" strokeWidth={2.5} />
+    <div className="min-h-screen relative" style={{ background: '#050505', color: '#EAEAEA' }}>
+      {/* Scan line */}
+      <div className="scan-line" />
+
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-[#1A1A1A]" style={{ background: 'rgba(5,5,5,0.92)', backdropFilter: 'blur(16px)' }}>
+        <div className="max-w-7xl mx-auto px-6 h-12 flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('landing')}>
+            <div className="w-5 h-5 border border-emerald-400/40 flex items-center justify-center">
+              <BarChart2 size={10} className="text-emerald-400" strokeWidth={2.5} />
             </div>
-            <span className="font-bold text-slate-900 text-lg">ROOKNOMICS</span>
+            <span className="font-black text-[#EAEAEA] text-sm tracking-[0.15em]">ROOKNOMICS</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-6">
             {(['landing', 'builder', 'results', 'news', 'learn'] as ViewType[]).map(v => (
-              <button key={v} onClick={() => setCurrentView(v)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === v ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'text-slate-600 hover:text-slate-800'}`}>
-                {v === 'landing' ? 'Home' : v === 'builder' ? 'Builder' : v === 'results' ? 'Results' : v === 'news' ? 'News' : 'Learn'}
+              <button key={v} onClick={() => handleNavigate(v)}
+                className={
+                  'text-[10px] tracking-[0.2em] font-medium transition-colors duration-200 ' +
+                  (currentView === v ? 'text-emerald-400' : 'text-[#7A7A7A] hover:text-[#EAEAEA]')
+                }>
+                {navLabels[v]}
               </button>
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowAuth(true)}
-              className="hidden md:flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-800 transition-colors px-3 py-1.5 rounded-full border border-slate-200 hover:border-slate-600"
-            >
-              <LogIn size={14} /> Sign In
-            </button>
-            <button className="md:hidden text-slate-600" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              {mobileMenuOpen ? <XIcon size={20} /> : <Menu size={20} />}
+          <div className="flex items-center gap-3">
+            {isLoggedIn ? (
+              <div className="hidden md:flex items-center gap-3">
+                <button
+                  onClick={() => handleNavigate('profile')}
+                  className={
+                    'flex items-center gap-2 text-[10px] tracking-[0.2em] transition-colors duration-200 ' +
+                    (currentView === 'profile' ? 'text-emerald-400' : 'text-[#7A7A7A] hover:text-[#EAEAEA]')
+                  }
+                >
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-400/10 text-[9px] font-bold text-emerald-300">
+                    {userInitials}
+                  </span>
+                  <span>{user?.name?.split(' ')[0]?.toUpperCase() ?? 'PROFILE'}</span>
+                </button>
+                <button
+                  onClick={() => { handleLogout(); setCurrentView('landing'); }}
+                  className="hidden md:flex items-center gap-1.5 text-[10px] tracking-[0.2em] text-[#7A7A7A] hover:text-rose-400 transition-colors border border-[#1A1A1A] hover:border-rose-400/20 px-3 py-1.5"
+                  title="Sign out"
+                >
+                  <LogOut size={11} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setAuthContext(undefined); setShowAuth(true); }}
+                className="hidden md:flex items-center gap-1.5 text-[10px] tracking-[0.2em] text-[#7A7A7A] hover:text-[#EAEAEA] transition-colors border border-[#1A1A1A] hover:border-[#2A2A2A] px-3 py-1.5"
+              >
+                <LogIn size={11} /> SIGN IN
+              </button>
+            )}
+            <button className="md:hidden text-[#7A7A7A]" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? <XIcon size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 bg-slate-50/95 backdrop-blur-xl px-6 py-3 flex flex-col gap-2">
+          <div className="md:hidden border-t border-[#1A1A1A] px-6 py-4 flex flex-col gap-3" style={{ background: '#050505' }}>
             {(['landing', 'builder', 'results', 'news', 'learn'] as ViewType[]).map(v => (
-              <button key={v} onClick={() => { setCurrentView(v); setMobileMenuOpen(false); }}
-                className={`px-4 py-2 rounded-xl text-sm font-medium text-left transition-all ${currentView === v ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'}`}>
-                {v === 'landing' ? 'Home' : v === 'builder' ? 'Builder' : v === 'results' ? 'Results' : v === 'news' ? 'News' : 'Learn'}
+              <button key={v} onClick={() => handleNavigate(v)}
+                className={
+                  'text-xs tracking-[0.2em] text-left py-2 transition-colors ' +
+                  (currentView === v ? 'text-emerald-400' : 'text-[#7A7A7A]')
+                }>
+                {navLabels[v]}
               </button>
             ))}
-            <button
-              onClick={() => {
-                setShowAuth(true)
-                setMobileMenuOpen(false)
-              }}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-left text-indigo-600"
-            >
-              Sign In
-            </button>
+            <div className="mt-1 border-t border-[#111111] pt-3">
+              {isLoggedIn ? (
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => handleNavigate('profile')}
+                    className="flex items-center gap-2 text-xs tracking-[0.2em] text-[#7A7A7A]"
+                  >
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-400/25 bg-emerald-400/10 text-[8px] font-bold text-emerald-300">
+                      {userInitials}
+                    </span>
+                    PROFILE
+                  </button>
+                  <button
+                    onClick={() => { handleLogout(); setCurrentView('landing'); }}
+                    className="text-xs tracking-[0.2em] text-[#5F5F5F] hover:text-rose-400 transition-colors"
+                  >
+                    SIGN OUT
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setAuthContext(undefined); setShowAuth(true); setMobileMenuOpen(false); }}
+                  className="text-xs tracking-[0.2em] text-[#7A7A7A]"
+                >
+                  SIGN IN
+                </button>
+              )}
+            </div>
           </div>
         )}
       </nav>
 
-      <AuthDialog open={showAuth} onClose={() => setShowAuth(false)} />
+      <AuthDialog
+        open={showAuth}
+        context={authContext}
+        onClose={() => {
+          setShowAuth(false);
+          setAuthContext(undefined);
+          if (pendingView) setPendingView(null);
+        }}
+      />
 
-      <div className="relative z-10 pt-16">
+      <div className="relative z-10 pt-12">
         {currentView === 'landing' && <LandingView setCurrentView={(v: string) => setCurrentView(v as ViewType)} setShowAuth={setShowAuth} />}
-        {currentView === 'builder' && <BuilderView setCurrentView={(v: string) => setCurrentView(v as ViewType)} />}
-        {currentView === 'results' && <ResultsView equityData={equityData} metrics={metrics} metricTab={metricTab} setMetricTab={setMetricTab} setCurrentView={setCurrentView} />}
+        {currentView === 'builder' && (
+          isLoggedIn
+            ? <BuilderView setCurrentView={(v: string) => setCurrentView(v as ViewType)} />
+            : null
+        )}
+        {currentView === 'results' && <ResultsView equityData={equityData} metrics={metrics} metricTab={metricTab} setMetricTab={setMetricTab} setCurrentView={setCurrentView} resultsData={resultsData} />}
         {currentView === 'news' && <NewsView setCurrentView={setCurrentView} />}
         {currentView === 'learn' && <LearnPage setCurrentView={(v: string) => setCurrentView(v as ViewType)} />}
+        {currentView === 'profile' && isLoggedIn && <ProfileView setCurrentView={(v: string) => setCurrentView(v as ViewType)} />}
       </div>
     </div>
   );
@@ -803,19 +1041,24 @@ export default function App() {
 /* ─── RESULTS VIEW ────────────────────────────────────────────── */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ResultsView({ equityData, metrics, metricTab, setMetricTab, setCurrentView }: any) {
+function ResultsView({ equityData, metrics, metricTab, setMetricTab, setCurrentView, resultsData }: any) {
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 max-w-7xl mx-auto px-6 pb-12 pt-8">
-      {/* Chart area */}
-      <div className="xl:col-span-3">
-        <PerformanceChart data={equityData} />
-        <TradeHistoryTable />
+    <div className="max-w-7xl mx-auto px-6 pb-16 pt-8">
+      {/* Section header */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-px h-4 bg-emerald-400/60" />
+        <p className="text-[11px] tracking-[0.25em] text-[#7A7A7A] uppercase font-medium">SIMULATION ENGINE</p>
       </div>
-      {/* Sidebar */}
-      <div className="xl:col-span-1 space-y-6">
-        <PerformanceMetrics metrics={metrics} tab={metricTab} setTab={setMetricTab} />
-        <VerdictPanel setCurrentView={setCurrentView} />
-        <RiskAnalysis />
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+        <div className="xl:col-span-3 space-y-4">
+          <PerformanceChart data={equityData} isDynamic={resultsData?.parsedDataAvailable && resultsData?.portfolioSeries?.length > 0} hasData={!!equityData} />
+          <TradeHistoryTable tradeLog={resultsData?.tradeLog} hasData={resultsData?.parsedDataAvailable} />
+        </div>
+        <div className="xl:col-span-1 space-y-4">
+          <PerformanceMetrics metrics={metrics} tab={metricTab} setTab={setMetricTab} />
+          <VerdictPanel setCurrentView={setCurrentView} resultsData={resultsData} />
+          <RiskAnalysis riskStats={resultsData?.riskStats} />
+        </div>
       </div>
     </div>
   );
@@ -830,233 +1073,316 @@ function CustomTooltip({ active, payload, label }: any) {
   const year = 2004 + Math.floor(monthIdx / 12);
   const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][monthIdx % 12];
   return (
-    <div className="bg-white/95 border border-slate-200 rounded-xl p-3 text-sm">
-      <p className="text-slate-600 text-xs mb-1">{month} {year}</p>
-      <p className="text-rose-700">Your Strategy: ${payload[0]?.value?.toLocaleString()}</p>
-      <p className="text-emerald-700">S&P 500: ${payload[1]?.value?.toLocaleString()}</p>
+    <div className="border border-[#1A1A1A] px-3 py-2 text-xs font-mono" style={{ background: '#0B0B0B' }}>
+      <p className="text-[#7A7A7A] mb-1 tracking-wider">{month} {year}</p>
+      <p className="text-[#EAEAEA]/70">{'STRATEGY: $' + (payload[0]?.value?.toLocaleString() ?? '')}</p>
+      <p className="text-emerald-400">{'INDEX: $' + (payload[1]?.value?.toLocaleString() ?? '')}</p>
     </div>
   );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function PerformanceChart({ data }: { data: any[] }) {
-  const annotations = [
-    { icon: ArrowDownLeft, color: 'text-rose-600', label: 'Oct 2008: -38%' },
-    { icon: ArrowUpRight, color: 'text-emerald-600', label: 'Mar 2013: +28%' },
-    { icon: TrendingDown, color: 'text-rose-600', label: 'Mar 2020: -24%' },
-    { icon: TrendingUp, color: 'text-emerald-600', label: 'Dec 2023: +26%' },
-  ];
-
-  return (
-    <div className="bg-white border border-slate-200/50 rounded-2xl p-6 mb-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-        <div>
-          <h2 className="text-slate-900 font-semibold text-lg">Portfolio Value Over Time</h2>
-          <p className="text-slate-600 text-sm">Monthly equity curve · 240 data points</p>
+function PerformanceChart({ data, isDynamic, hasData }: { data: any[] | null; isDynamic?: boolean; hasData?: boolean }) {
+  // Empty state — no backtest run yet
+  if (!hasData || !data) {
+    return (
+      <div className="border border-[#1A1A1A] p-6" style={{ background: '#0B0B0B' }}>
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
+          <div>
+            <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase mb-1">EQUITY CURVE</p>
+            <h2 className="text-lg font-bold text-[#EAEAEA] tracking-tight">Portfolio Value Over Time</h2>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <span className="bg-rose-500/20 text-rose-700 border border-rose-200 text-xs px-2.5 py-1 rounded-full">Your Strategy</span>
-          <span className="bg-emerald-500/20 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full">S&P 500 (Buy & Hold)</span>
+        <div className="h-72 flex flex-col items-center justify-center border border-dashed border-[#1A1A1A]">
+          <Activity size={24} className="text-[#2A2A2A] mb-3" />
+          <p className="text-[11px] font-mono text-[#3A3A3A] tracking-wider">AWAITING SIMULATION DATA</p>
+          <p className="text-[10px] text-[#2A2A2A] mt-1">Run a backtest to populate the equity curve</p>
         </div>
       </div>
-      <div className="mt-6 h-80">
+    );
+  }
+
+  // Compute dynamic event badges from real data
+  const firstLabel = data[0]?.label;
+  const lastLabel = data[data.length - 1]?.label;
+  const startYear = firstLabel ? new Date(firstLabel).getFullYear() : null;
+  const endYear = lastLabel ? new Date(lastLabel).getFullYear() : null;
+
+  let maxDrop = 0;
+  let maxRise = 0;
+  for (let i = 1; i < data.length; i++) {
+    const prev = data[i - 1].user;
+    const curr = data[i].user;
+    if (prev > 0) {
+      const chg = ((curr - prev) / prev) * 100;
+      if (chg < maxDrop) maxDrop = chg;
+      if (chg > maxRise) maxRise = chg;
+    }
+  }
+
+  const events = [
+    startYear && { icon: Activity, color: 'text-[#7A7A7A]', label: 'START ' + startYear },
+    endYear && { icon: Activity, color: 'text-[#7A7A7A]', label: 'END ' + endYear },
+    maxDrop < -1 && { icon: TrendingDown, color: 'text-red-400', label: 'MAX DROP ' + maxDrop.toFixed(1) + '%' },
+    maxRise > 1 && { icon: TrendingUp, color: 'text-emerald-400', label: 'MAX GAIN +' + maxRise.toFixed(1) + '%' },
+  ].filter(Boolean) as { icon: ElementType; color: string; label: string }[];
+
+  const xDataKey = isDynamic ? 'label' : 'month';
+  const xTickFormatter = isDynamic
+    ? (v: string) => { try { return "'" + new Date(v).getFullYear().toString().slice(2); } catch { return ''; } }
+    : (v: number) => { if (v % 24 === 0) { const l = ["'04",'06','08','10','12','14','16','18','20','22','24']; return l[v / 24] || ''; } return ''; };
+  const xInterval = isDynamic ? Math.max(1, Math.floor(data.length / 8)) : 23;
+
+  return (
+    <div className="border border-[#1A1A1A] p-6" style={{ background: '#0B0B0B' }}>
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
+        <div>
+          <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase mb-1">EQUITY CURVE</p>
+          <h2 className="text-lg font-bold text-[#EAEAEA] tracking-tight">Portfolio Value Over Time</h2>
+        </div>
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2"><div className="w-5 h-px bg-[#EAEAEA]/50" /><span className="text-[10px] text-[#7A7A7A] tracking-wider">STRATEGY</span></div>
+          <div className="flex items-center gap-2"><div className="w-5 h-px bg-emerald-400" /><span className="text-[10px] text-[#7A7A7A] tracking-wider">S&P 500</span></div>
+        </div>
+      </div>
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
               <linearGradient id="userGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+                <stop offset="0%" stopColor="#EAEAEA" stopOpacity={0.08} />
+                <stop offset="100%" stopColor="#EAEAEA" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="sp500Gradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                <stop offset="0%" stopColor="#34d399" stopOpacity={0.15} />
+                <stop offset="100%" stopColor="#34d399" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.08)" />
-            <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(v: number) => {
-              if (v % 24 === 0) {
-                const labels = ["'04", "'06", "'08", "'10", "'12", "'14", "'16", "'18", "'20", "'22", "'24"];
-                return labels[v / 24] || '';
-              }
-              return '';
-            }} interval={23} />
-            <YAxis tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(v: number) => `$${Math.round(v / 1000)}k`} />
-            <Tooltip content={<CustomTooltip />} />
-            <Area type="monotone" dataKey="user" stroke="#f43f5e" strokeWidth={2} fill="url(#userGradient)" fillOpacity={1} />
-            <Area type="monotone" dataKey="sp500" stroke="#10b981" strokeWidth={2.5} fill="url(#sp500Gradient)" fillOpacity={1} />
-            <ReferenceLine x={54} stroke="#f43f5e" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: "2008 Crisis", fill: "#f43f5e", fontSize: 11 }} />
-            <ReferenceLine x={144} stroke="#6366f1" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: "COVID", fill: "#818cf8", fontSize: 11 }} />
+            <CartesianGrid strokeDasharray="2 4" stroke="#1A1A1A" />
+            <XAxis dataKey={xDataKey} tick={{ fill: '#7A7A7A', fontSize: 10, fontFamily: 'monospace' }} tickFormatter={xTickFormatter as any} interval={xInterval} axisLine={{ stroke: '#1A1A1A' }} tickLine={false} />
+            <YAxis tick={{ fill: '#7A7A7A', fontSize: 10, fontFamily: 'monospace' }} tickFormatter={(v: number) => '$' + Math.round(v / 1000) + 'k'} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip isDynamic={isDynamic} />} />
+            <Area type="monotone" dataKey="user" stroke="#EAEAEA" strokeWidth={1.5} fill="url(#userGradient)" fillOpacity={1} strokeOpacity={0.6} />
+            <Area type="monotone" dataKey="sp500" stroke="#34d399" strokeWidth={2} fill="url(#sp500Gradient)" fillOpacity={1} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex flex-wrap gap-3 mt-4">
-        {annotations.map((a, i) => (
-          <div key={i} className="bg-slate-100/60 border border-slate-200/40 rounded-xl px-3 py-2 flex items-center gap-2 cursor-pointer hover:border-indigo-500/40 text-xs text-slate-700 transition-all duration-300">
-            <a.icon size={14} className={a.color} />
-            <span>{a.label}</span>
-          </div>
-        ))}
-      </div>
+      {events.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-4">
+          {events.map((e, i) => (
+            <div key={i} className="flex items-center gap-1.5 border border-[#1A1A1A] px-2.5 py-1.5 text-[10px] tracking-wider cursor-default hover:border-[#2A2A2A] transition-colors">
+              <e.icon size={11} className={e.color} />
+              <span className="text-[#7A7A7A]">{e.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-/* ─── TRADE HISTORY ───────────────────────────────────────────── */
+function TradeHistoryTable({ tradeLog = [], hasData }: { tradeLog?: any[]; hasData?: boolean }) {
+  const displayTrades = hasData && tradeLog.length > 0 ? tradeLog : tradeHistory
 
-function TradeHistoryTable() {
   return (
-    <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <List size={18} className="text-indigo-600" />
-        <h2 className="text-slate-900 font-semibold text-lg">Trade History</h2>
-        <span className="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full ml-2">214 trades</span>
+    <div className="border border-[#1A1A1A] p-5" style={{ background: '#0B0B0B' }}>
+      <div className="flex items-center gap-3 mb-5">
+        <List size={13} className="text-[#7A7A7A]" />
+        <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase">TRADE LOG</p>
+        <span className="text-[9px] font-mono text-emerald-400 border border-emerald-400/20 px-2 py-0.5">
+          {displayTrades.length} TRADES
+        </span>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full">
           <thead>
-            <tr className="bg-slate-100/50 text-slate-600 text-xs uppercase tracking-wide">
-              {['Date', 'Action', 'Price', 'Shares', 'P&L', 'Return', 'Cumulative'].map(h => (
-                <th key={h} className="px-3 py-2.5 text-left font-medium">{h}</th>
+            <tr className="border-b border-[#1A1A1A]">
+              {['DATE', 'ACTION', 'PRICE', 'SHARES', 'P&L', 'RETURN', 'CUMULATIVE'].map((heading) => (
+                <th key={heading} className="px-3 py-2 text-left text-[9px] tracking-[0.15em] text-[#7A7A7A] font-medium">
+                  {heading}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {tradeHistory.map((row, i) => (
-              <tr key={i} className={`border-t border-slate-200/50 ${i % 2 === 0 ? 'bg-slate-100/20' : ''}`}>
-                <td className="px-3 py-2.5 text-slate-700">{row.date}</td>
-                <td className={`px-3 py-2.5 font-medium ${row.action === 'BUY' ? 'text-indigo-600' : 'text-amber-600'}`}>{row.action}</td>
-                <td className="px-3 py-2.5 text-slate-700">{row.price}</td>
-                <td className="px-3 py-2.5 text-slate-700">{row.shares}</td>
-                <td className={`px-3 py-2.5 font-medium ${row.positive === true ? 'text-emerald-600' : row.positive === false ? 'text-rose-600' : 'text-slate-500'}`}>{row.pnl}</td>
-                <td className={`px-3 py-2.5 ${row.positive === true ? 'text-emerald-600' : row.positive === false ? 'text-rose-600' : 'text-slate-500'}`}>{row.ret}</td>
-                <td className="px-3 py-2.5 text-slate-700">{row.cum}</td>
+            {displayTrades.slice(0, 8).map((row, index) => (
+              <tr key={index} className="border-b border-[#1A1A1A]/60">
+                <td className="px-3 py-2.5 text-[10px] font-mono text-[#7A7A7A]">{row.date}</td>
+                <td className="px-3 py-2.5 text-[10px] font-mono text-[#EAEAEA]">{row.action}</td>
+                <td className="px-3 py-2.5 text-[10px] font-mono text-[#EAEAEA]">{row.price ?? '-'}</td>
+                <td className="px-3 py-2.5 text-[10px] font-mono text-[#7A7A7A]">{row.shares ?? '-'}</td>
+                <td className="px-3 py-2.5 text-[10px] font-mono text-[#7A7A7A]">{row.pnl ?? row.profit ?? '-'}</td>
+                <td className="px-3 py-2.5 text-[10px] font-mono text-[#7A7A7A]">{row.returnPct ?? row.ret ?? '-'}</td>
+                <td className="px-3 py-2.5 text-[10px] font-mono text-[#EAEAEA]">{row.cumulative ?? row.cum ?? '-'}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className="flex justify-between items-center mt-4">
-        <span className="text-slate-500 text-xs">Showing 8 of 214 trades</span>
-        <span className="text-indigo-600 text-xs cursor-pointer hover:text-indigo-700 transition-colors">View All</span>
-      </div>
     </div>
-  );
+  )
 }
 
-/* ─── PERFORMANCE METRICS ─────────────────────────────────────── */
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function PerformanceMetrics({ metrics, tab, setTab }: any) {
-  const isStrategy = tab === 'strategy';
+function PerformanceMetrics({
+  metrics,
+  tab,
+  setTab,
+}: {
+  metrics: any
+  tab: 'strategy' | 'sp500'
+  setTab: (tab: 'strategy' | 'sp500') => void
+}) {
   const rows = [
-    { label: 'Total Return', value: metrics.totalReturn, color: isStrategy ? 'text-rose-600 font-semibold' : 'text-emerald-600 font-bold' },
-    { label: 'Annualized Return', value: metrics.annualizedReturn, color: isStrategy ? 'text-rose-700' : 'text-emerald-700' },
-    { label: 'Max Drawdown', value: metrics.maxDrawdown, color: 'text-rose-600', note: '(During 2008-09 crisis)' },
-    { label: 'Win Rate', value: metrics.winRate, color: 'text-slate-900' },
-    { label: 'Sharpe Ratio', value: metrics.sharpeRatio, color: 'text-slate-900' },
-    { label: 'Avg Trade Duration', value: metrics.avgTradeDuration, color: 'text-slate-700' },
-    { label: 'Total Trades', value: metrics.totalTrades, color: 'text-slate-700' },
-    { label: 'Trading Fees Paid', value: metrics.tradingFees, color: metrics.tradingFees.startsWith('-') ? 'text-rose-600' : 'text-slate-700' },
-  ];
+    { label: 'TOTAL RETURN', value: metrics?.totalReturn ?? '-' },
+    { label: 'ANNUALIZED', value: metrics?.annualizedReturn ?? '-' },
+    { label: 'MAX DRAWDOWN', value: metrics?.maxDrawdown ?? '-' },
+    { label: 'WIN RATE', value: metrics?.winRate ?? '-' },
+    { label: 'SHARPE RATIO', value: metrics?.sharpeRatio ?? '-' },
+    { label: 'AVG DURATION', value: metrics?.avgTradeDuration ?? metrics?.avgTradeDurationDays ?? '-' },
+    { label: 'TOTAL TRADES', value: metrics?.totalTrades ?? '-' },
+    { label: 'FEES PAID', value: metrics?.tradingFees ?? '-' },
+  ]
 
   return (
-    <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Activity size={18} className="text-indigo-600" />
-        <h2 className="text-slate-900 font-semibold">Performance Metrics</h2>
-      </div>
+    <div className="border border-[#1A1A1A] p-5" style={{ background: '#0B0B0B' }}>
+      <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase mb-4">METRICS</p>
       <div className="flex gap-2 mb-4">
-        {(['strategy', 'sp500'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`text-xs px-3 py-1.5 rounded-full transition-all ${tab === t ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-600 border border-transparent hover:text-slate-800'}`}>
-            {t === 'strategy' ? 'Your Strategy' : 'S&P 500'}
+        {(['strategy', 'sp500'] as const).map((key) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={
+              'text-[9px] tracking-[0.15em] px-3 py-1.5 transition-all ' +
+              (tab === key
+                ? 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/30'
+                : 'text-[#7A7A7A] border border-[#1A1A1A] hover:text-[#EAEAEA]')
+            }
+          >
+            {key === 'strategy' ? 'STRATEGY' : 'S&P 500'}
           </button>
         ))}
       </div>
-      <div className="space-y-0">
-        {rows.map((r, i) => (
-          <div key={i} className={`flex justify-between items-center py-3 ${i < rows.length - 1 ? 'border-b border-slate-200' : ''}`}>
-            <span className="text-slate-600 text-sm flex items-center gap-1">
-              {r.label}
-              {r.label === 'Total Return' && !isStrategy && <Info size={12} className="text-slate-500" />}
-            </span>
-            <div className="text-right">
-              <span className={`text-sm ${r.color}`}>{r.value}</span>
-              {r.note && <p className="text-slate-500 text-xs">{r.note}</p>}
-            </div>
+      <div>
+        {rows.map((row) => (
+          <div key={row.label} className="flex justify-between items-center py-2.5 border-b border-[#1A1A1A] last:border-0">
+            <span className="text-[9px] tracking-[0.15em] text-[#7A7A7A] uppercase">{row.label}</span>
+            <span className="text-xs font-mono font-medium text-[#EAEAEA]">{String(row.value)}</span>
           </div>
         ))}
       </div>
-      <div className="bg-amber-500/10 border border-amber-200 rounded-xl p-4 mt-4">
-        <div className="flex gap-2">
-          <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
-          <p className="text-amber-800/80 text-xs leading-relaxed">
-            After fees and taxes, your strategy returned +47% vs the S&P's +332% over 20 years.
+    </div>
+  )
+}
+
+function VerdictPanel({
+  setCurrentView,
+  resultsData,
+}: {
+  setCurrentView: (v: ViewType) => void
+  resultsData?: any
+}) {
+  const backtestState = useSelector((state: RootState) => state.backtest)
+  const data = backtestState.data as Record<string, unknown> | null
+
+  const verdictData = data && typeof data === 'object' && 'verdict' in data
+    ? (data.verdict as Record<string, unknown> | null)
+    : null
+  const strategyReturn = Number(resultsData?.portfolioMetrics?.totalReturn ?? 0)
+  const benchmarkReturn = Number(resultsData?.benchmarkMetrics?.totalReturn ?? 0)
+  const returnGap = strategyReturn - benchmarkReturn
+  const strategyWon = returnGap > 0
+
+  const status = typeof verdictData?.status === 'string'
+    ? verdictData.status
+    : strategyWon
+      ? 'OUTPERFORMED'
+      : 'UNDERPERFORMED'
+
+  const summary = typeof verdictData?.summary === 'string'
+    ? verdictData.summary
+    : strategyWon
+      ? `The strategy beat the benchmark by ${returnGap.toFixed(2)} percentage points.`
+      : `The strategy trails the benchmark by ${Math.abs(returnGap).toFixed(2)} percentage points.`
+
+  const insights = Array.isArray(verdictData?.insights)
+    ? verdictData.insights.map((entry) => String(entry))
+    : []
+
+  return (
+    <div className="border border-[#1A1A1A] p-5" style={{ background: '#0B0B0B' }}>
+      <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase mb-4">VERDICT</p>
+      <div className={'border p-4 mb-4 ' + (strategyWon ? 'border-emerald-400/20 bg-emerald-400/[0.04]' : 'border-[#F5C542]/20 bg-[#F5C542]/[0.04]')}>
+        <p className={'text-sm font-black tracking-widest uppercase ' + (strategyWon ? 'text-emerald-400' : 'text-[#F5C542]')}>
+          {status}
+        </p>
+      </div>
+      <p className="text-[12px] text-[#EAEAEA] leading-relaxed mb-4">
+        {summary}
+      </p>
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        <div className={'border p-4 ' + (strategyWon ? 'border-emerald-400/20 bg-emerald-400/[0.02]' : 'border-[#1A1A1A]')}>
+          <p className="text-[9px] tracking-[0.2em] text-[#7A7A7A] uppercase mb-2">STRATEGY</p>
+          <p className={'text-2xl font-black font-mono tracking-tight ' + (strategyWon ? 'text-emerald-400' : 'text-[#EAEAEA]')}>
+            {(strategyReturn > 0 ? '+' : '') + strategyReturn.toFixed(2) + '%'}
+          </p>
+        </div>
+        <div className={'border p-4 ' + (!strategyWon ? 'border-[#F5C542]/20 bg-[#F5C542]/[0.02]' : 'border-[#1A1A1A]')}>
+          <p className="text-[9px] tracking-[0.2em] text-[#7A7A7A] uppercase mb-2">S&P 500</p>
+          <p className={'text-2xl font-black font-mono tracking-tight ' + (!strategyWon ? 'text-[#F5C542]' : 'text-[#EAEAEA]')}>
+            {(benchmarkReturn > 0 ? '+' : '') + benchmarkReturn.toFixed(2) + '%'}
           </p>
         </div>
       </div>
+      {insights.length > 0 && (
+        <div className="space-y-3 mb-5">
+          {insights.slice(0, 3).map((insight, index) => (
+            <p key={index} className="text-[11px] text-[#7A7A7A] leading-[1.6]">
+              {insight}
+            </p>
+          ))}
+        </div>
+      )}
+      <button onClick={() => setCurrentView('builder')} className="text-[10px] tracking-[0.2em] text-[#7A7A7A] hover:text-emerald-400 transition-colors uppercase font-medium">
+        Refine Strategy
+      </button>
     </div>
-  );
+  )
 }
 
-/* ─── VERDICT ─────────────────────────────────────────────────── */
+function RiskAnalysis({ riskStats }: { riskStats?: RiskStats }) {
+  const dataToUse = riskStats?.radarData?.length ? riskStats.radarData : radarData
+  const badges = riskStats
+    ? [
+        { l: 'BETA', v: Number(riskStats.beta ?? 0).toFixed(2) },
+        { l: 'ALPHA', v: Number(riskStats.alpha ?? 0).toFixed(1) + '%' },
+        { l: 'VAR (5%)', v: Number(riskStats.var5 ?? 0).toFixed(1) + '%' },
+      ]
+    : [
+        { l: 'BETA', v: '0.89' },
+        { l: 'ALPHA', v: '-1.2%' },
+        { l: 'VAR (5%)', v: '-3.8%' },
+      ]
 
-function VerdictPanel({ setCurrentView }: { setCurrentView: (v: ViewType) => void }) {
   return (
-    <div className="bg-gradient-to-br from-white to-slate-50 border-2 border-indigo-200 shadow-[0_0_40px_rgba(99,102,241,0.12)] rounded-2xl p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Gavel size={16} className="text-indigo-600" />
-        <span className="text-indigo-600 text-xs font-bold tracking-widest">THE VERDICT</span>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-rose-500/5 border border-rose-500/20 rounded-xl p-4">
-          <p className="text-rose-600 text-xs font-bold tracking-wider mb-2">YOUR STRATEGY</p>
-          <p className="text-3xl font-bold text-rose-700">+47%</p>
-          <p className="text-slate-500 text-xs">Total Return</p>
-          <TrendingDown size={18} className="text-rose-600 mt-2" />
-        </div>
-        <div className="bg-emerald-500/5 border border-emerald-200 rounded-xl p-4 relative">
-          <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">WINNER</span>
-          <p className="text-emerald-600 text-xs font-bold tracking-wider mb-2">S&P 500</p>
-          <p className="text-3xl font-bold text-emerald-700">+332%</p>
-          <p className="text-slate-500 text-xs">Total Return</p>
-          <TrendingUp size={18} className="text-emerald-600 mt-2" />
-        </div>
-      </div>
-      <p className="text-slate-700 text-sm text-center mt-4 leading-relaxed">
-        The index beat your strategy by <span className="text-indigo-600 font-semibold">285 percentage points</span> over 20 years—without a single trade.
-      </p>
-      <p className="text-indigo-600 text-sm cursor-pointer mt-2 text-center hover:text-indigo-700 transition-colors" onClick={() => setCurrentView('news')}>
-        Read related market news →
-      </p>
-    </div>
-  );
-}
-
-/* ─── RISK ANALYSIS ───────────────────────────────────────────── */
-
-function RiskAnalysis() {
-  const badges = ['Beta: 0.89', 'Alpha: -1.2%', 'VaR (5%): -3.8%'];
-  return (
-    <div className="bg-white border border-slate-200/50 rounded-2xl p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <PieChart size={18} className="text-indigo-600" />
-        <h2 className="text-slate-900 font-semibold">Risk Analysis</h2>
-      </div>
+    <div className="border border-[#1A1A1A] p-5" style={{ background: '#0B0B0B' }}>
+      <p className="text-[9px] tracking-[0.25em] text-[#7A7A7A] uppercase mb-4">RISK PROFILE</p>
       <div className="flex justify-center">
-        <ResponsiveContainer width={220} height={220}>
-          <RadarChart data={radarData}>
-            <PolarGrid stroke="rgba(0,0,0,0.1)" />
-            <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+        <ResponsiveContainer width={200} height={200}>
+          <RadarChart data={dataToUse}>
+            <PolarGrid stroke="#1A1A1A" />
+            <PolarAngleAxis dataKey="metric" tick={{ fontSize: 9, fill: '#7A7A7A', fontFamily: 'monospace' }} />
             <PolarRadiusAxis tick={false} domain={[0, 100]} axisLine={false} />
-            <Radar name="Strategy" dataKey="strategy" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.2} />
-            <Radar name="S&P 500" dataKey="sp500" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
+            <Radar name="Strategy" dataKey="strategy" stroke="#EAEAEA" fill="#EAEAEA" fillOpacity={0.06} strokeWidth={1} />
+            <Radar name="S&P 500" dataKey="benchmark" stroke="#34d399" fill="#34d399" fillOpacity={0.1} strokeWidth={1.5} />
           </RadarChart>
         </ResponsiveContainer>
       </div>
-      <div className="grid grid-cols-3 gap-2 mt-2">
-        {badges.map(b => (
-          <span key={b} className="text-slate-600 text-xs text-center bg-slate-100/50 rounded-lg py-1.5 px-1">{b}</span>
+      <div className="grid grid-cols-3 gap-2 mt-3">
+        {badges.map((badge) => (
+          <div key={badge.l} className="border border-[#1A1A1A] px-2 py-2 text-center">
+            <p className="text-[8px] text-[#7A7A7A] tracking-wider mb-1">{badge.l}</p>
+            <p className="text-xs font-mono text-[#EAEAEA]">{badge.v}</p>
+          </div>
         ))}
       </div>
     </div>
@@ -1078,7 +1404,7 @@ function NewsView({ setCurrentView }: any) {
   }, [activeTicker]);
 
   // Handle ticker input change with uppercase
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.toUpperCase();
     setSearchInput(val);
     setActiveTicker(val);
@@ -1097,7 +1423,7 @@ function NewsView({ setCurrentView }: any) {
       if (diffMins === 0) {
         setLastUpdatedText('Updated just now');
       } else {
-        setLastUpdatedText(`Updated ${diffMins} min ago`);
+        setLastUpdatedText('Updated ' + diffMins + ' min ago');
       }
     }, 30000);
     return () => clearInterval(timer);
@@ -1190,17 +1516,7 @@ function NewsView({ setCurrentView }: any) {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map(i => (
               <div key={i} className="bg-white border border-slate-200/80 rounded-[2rem] overflow-hidden h-[420px] flex flex-col pt-0 shadow-sm relative">
-                <style>{`
-                  @keyframes shimmer {
-                    0% { background-position: -200% 0 }
-                    100% { background-position: 200% 0 }
-                  }
-                  .shimmer-bg {
-                    background: linear-gradient(90deg, #f8fafc 25%, #f1f5f9 50%, #f8fafc 75%);
-                    background-size: 200% 100%;
-                    animation: shimmer 1.5s infinite;
-                  }
-                `}</style>
+                <style>{'@keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } } .shimmer-bg { background: linear-gradient(90deg, #f8fafc 25%, #f1f5f9 50%, #f8fafc 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }'}</style>
                 <div className="h-48 w-full shimmer-bg border-b border-slate-100" />
                 <div className="p-6 flex-1 flex flex-col justify-center gap-4">
                   <div className="flex justify-between items-center">
@@ -1225,7 +1541,7 @@ function NewsView({ setCurrentView }: any) {
               <Search size={28} className="text-slate-400" />
             </div>
             <h3 className="text-slate-600 text-lg font-medium">
-              {activeTicker ? `No recent news available for ${activeTicker}` : 'No news available right now'}
+              {activeTicker ? 'No recent news available for ' + activeTicker : 'No news available right now'}
             </h3>
             {activeTicker && (
               <p className="text-slate-500 text-sm mt-2 max-w-sm mx-auto">Try typing another ticker symbol or select from the quick picks above.</p>
