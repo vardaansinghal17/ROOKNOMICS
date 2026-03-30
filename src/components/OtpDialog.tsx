@@ -11,7 +11,7 @@ interface OtpDialogProps {
 }
 
 const OTP_LENGTH = 6;
-const RESEND_COOLDOWN = 30;
+const RESEND_COOLDOWN = 60;
 
 export default function OtpDialog({ open, email, onClose, onVerified }: OtpDialogProps) {
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
@@ -37,7 +37,7 @@ export default function OtpDialog({ open, email, onClose, onVerified }: OtpDialo
     setCanResend(false);
     clearOtpError();
     setTimeout(() => inputRefs.current[0]?.focus(), 100);
-  }, [open, clearOtpError]);
+  }, [open]);
 
   useEffect(() => {
     if (!open || isVerified) return;
