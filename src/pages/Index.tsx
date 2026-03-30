@@ -834,17 +834,17 @@ export default function App() {
     }
   }, [isLoggedIn])
 
-  // If user logs out while on builder or profile, send them home
+  // If user logs out while on a protected view, send them home
   useEffect(() => {
-    if (!isLoggedIn && (currentView === 'builder' || currentView === 'profile')) {
+    if (!isLoggedIn && (currentView === 'builder' || currentView === 'results' || currentView === 'profile')) {
       setCurrentView('landing')
     }
   }, [isLoggedIn])
 
   // Auth-guarded navigation — intercept protected views
   const handleNavigate = (view: ViewType) => {
-    if (view === 'builder' && !isLoggedIn) {
-      setPendingView('builder')
+    if ((view === 'builder' || view === 'results') && !isLoggedIn) {
+      setPendingView(view)
       setAuthContext('gate')
       setShowAuth(true)
       setMobileMenuOpen(false)
@@ -1034,7 +1034,11 @@ export default function App() {
             ? <BuilderView setCurrentView={(v: string) => setCurrentView(v as ViewType)} />
             : null
         )}
-        {currentView === 'results' && <ResultsView equityData={equityData} metrics={metrics} metricTab={metricTab} setMetricTab={setMetricTab} setCurrentView={setCurrentView} resultsData={resultsData} />}
+        {currentView === 'results' && (
+          isLoggedIn
+            ? <ResultsView equityData={equityData} metrics={metrics} metricTab={metricTab} setMetricTab={setMetricTab} setCurrentView={setCurrentView} resultsData={resultsData} />
+            : null
+        )}
         {currentView === 'news' && <NewsView setCurrentView={setCurrentView} />}
         {currentView === 'learn' && <LearnPage setCurrentView={(v: string) => setCurrentView(v as ViewType)} />}
         {currentView === 'profile' && isLoggedIn && <ProfileView setCurrentView={(v: string) => setCurrentView(v as ViewType)} />}
