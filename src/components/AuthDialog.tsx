@@ -292,13 +292,13 @@ export default function AuthDialog({ open, onClose, context }: AuthDialogProps) 
                     </button>
                   </div>
 
-                  {mode === 'login' && (
+                  {/* {mode === 'login' && (
                     <div className="text-right">
                       <button type="button" className="text-xs text-emerald-300 transition-colors hover:text-emerald-200">
                         Forgot password?
                       </button>
                     </div>
-                  )}
+                  )} */}
 
                   <button
                     type="submit"

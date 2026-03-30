@@ -1,6 +1,6 @@
-// src/components/OtpDialog.tsx
 import { useState, useRef, useEffect, KeyboardEvent, ClipboardEvent } from 'react';
-import { X, BarChart2, ShieldCheck, RefreshCw, CheckCircle2, Loader2 } from 'lucide-react';
+import { X, BarChart2, ShieldCheck, RefreshCw, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth.js';
 
 interface OtpDialogProps {
@@ -10,14 +10,14 @@ interface OtpDialogProps {
   onVerified: () => void;
 }
 
-const OTP_LENGTH     = 6;
-const RESEND_COOLDOWN = 30; // seconds
+const OTP_LENGTH = 6;
+const RESEND_COOLDOWN = 30;
 
 export default function OtpDialog({ open, email, onClose, onVerified }: OtpDialogProps) {
-  const [otp, setOtp]             = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [resendTimer, setResendTimer] = useState(RESEND_COOLDOWN);
   const [canResend, setCanResend] = useState(false);
-  const inputRefs                 = useRef<(HTMLInputElement | null)[]>([]);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const {
     handleVerifyOtp,
@@ -25,13 +25,11 @@ export default function OtpDialog({ open, email, onClose, onVerified }: OtpDialo
     otpError,
     clearOtpError,
     isVerified,
-
     handleResendOtp,
     isResendLoading,
     resendError,
   } = useAuth();
 
-  // ── Reset + focus on open ─────────────────────────────────
   useEffect(() => {
     if (!open) return;
     setOtp(Array(OTP_LENGTH).fill(''));
@@ -39,32 +37,37 @@ export default function OtpDialog({ open, email, onClose, onVerified }: OtpDialo
     setCanResend(false);
     clearOtpError();
     setTimeout(() => inputRefs.current[0]?.focus(), 100);
-  }, [open]);
+  }, [open, clearOtpError]);
 
-  // ── Countdown timer ───────────────────────────────────────
   useEffect(() => {
     if (!open || isVerified) return;
-    if (resendTimer <= 0) { setCanResend(true); return; }
+    if (resendTimer <= 0) {
+      setCanResend(true);
+      return;
+    }
+
     const interval = setInterval(() => {
-      setResendTimer(prev => {
-        if (prev <= 1) { setCanResend(true); return 0; }
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          setCanResend(true);
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
+
     return () => clearInterval(interval);
   }, [open, isVerified, resendTimer]);
 
-  // ── Auto-close after success animation ───────────────────
   useEffect(() => {
     if (isVerified) {
       const timer = setTimeout(() => onVerified(), 1800);
       return () => clearTimeout(timer);
     }
-  }, [isVerified]);
+  }, [isVerified, onVerified]);
 
   if (!open) return null;
 
-  // ── Input handlers ────────────────────────────────────────
   const handleChange = (index: number, value: string) => {
     if (!/^[0-9]?$/.test(value)) return;
     const newOtp = [...otp];
@@ -72,13 +75,11 @@ export default function OtpDialog({ open, email, onClose, onVerified }: OtpDialo
     setOtp(newOtp);
     clearOtpError();
 
-    // Auto-advance cursor
     if (value && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-submit when all 6 digits filled
-    if (value && newOtp.every(d => d !== '')) {
+    if (value && newOtp.every((digit) => digit !== '')) {
       triggerVerify(newOtp.join(''));
     }
   };
@@ -87,7 +88,7 @@ export default function OtpDialog({ open, email, onClose, onVerified }: OtpDialo
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
-    if (e.key === 'ArrowLeft'  && index > 0)             inputRefs.current[index - 1]?.focus();
+    if (e.key === 'ArrowLeft' && index > 0) inputRefs.current[index - 1]?.focus();
     if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1) inputRefs.current[index + 1]?.focus();
   };
 
@@ -95,19 +96,23 @@ export default function OtpDialog({ open, email, onClose, onVerified }: OtpDialo
     e.preventDefault();
     const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
     if (!paste) return;
+
     const newOtp = Array(OTP_LENGTH).fill('');
-    paste.split('').forEach((ch, i) => { newOtp[i] = ch; });
+    paste.split('').forEach((char, index) => {
+      newOtp[index] = char;
+    });
     setOtp(newOtp);
+
     const nextFocus = Math.min(paste.length, OTP_LENGTH - 1);
     inputRefs.current[nextFocus]?.focus();
-    if (paste.length === OTP_LENGTH) triggerVerify(paste);
+
+    if (paste.length === OTP_LENGTH) {
+      triggerVerify(paste);
+    }
   };
 
-  // ── Calls POST /auth/verify-otp ───────────────────────────
   const triggerVerify = async (code: string) => {
     await handleVerifyOtp(email, code);
-    // If failed, Redux sets otpError — we clear inputs so user can retype
-    // isVerified becoming true is handled by the useEffect above
   };
 
   const handleManualVerify = () => {
@@ -116,11 +121,9 @@ export default function OtpDialog({ open, email, onClose, onVerified }: OtpDialo
     triggerVerify(code);
   };
 
-  // ── Calls POST /auth/resend-otp ───────────────────────────
   const handleResend = async () => {
     if (!canResend || isResendLoading) return;
     await handleResendOtp(email);
-    // Reset UI timer and clear inputs regardless of success/fail
     setOtp(Array(OTP_LENGTH).fill(''));
     clearOtpError();
     setResendTimer(RESEND_COOLDOWN);
@@ -128,166 +131,173 @@ export default function OtpDialog({ open, email, onClose, onVerified }: OtpDialo
     setTimeout(() => inputRefs.current[0]?.focus(), 50);
   };
 
-  const maskedEmail = email.replace(/(.{2})(.*)(@.*)/, (_m, a, b, c) =>
-    a + '*'.repeat(b.length) + c
+  const maskedEmail = email.replace(/(.{2})(.*)(@.*)/, (_match, start, middle, end) =>
+    start + '*'.repeat(middle.length) + end
   );
 
-  // Combined error — show OTP error or resend error
   const displayError = otpError || resendError;
 
   return (
-    <>
-      <div
-        className="fixed inset-0 bg-slate-900/30 z-[60] backdrop-blur-sm"
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[60] bg-black/75 backdrop-blur-sm"
         onClick={!isVerified ? onClose : undefined}
       />
+
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-        <div
-          className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl"
-          onClick={e => e.stopPropagation()}
-          style={{ animation: 'otpSlideIn 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 8 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-md overflow-hidden rounded-2xl border border-[#1A1A1A] bg-[#090909] shadow-[0_32px_96px_rgba(0,0,0,0.7)]"
+          onClick={(e) => e.stopPropagation()}
         >
-          <style>{`
-            @keyframes otpSlideIn {
-              from { opacity: 0; transform: scale(0.94) translateY(8px); }
-              to   { opacity: 1; transform: scale(1)    translateY(0);   }
-            }
-            @keyframes otpSuccess {
-              0%   { transform: scale(0.8); opacity: 0; }
-              60%  { transform: scale(1.1); opacity: 1; }
-              100% { transform: scale(1);   opacity: 1; }
-            }
-            .otp-success-icon { animation: otpSuccess 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-          `}</style>
+          <div className="relative p-6">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.15),transparent_65%)]" />
 
-          <div className="p-6">
-
-            {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-                  <BarChart2 size={16} className="text-white" />
+            <div className="relative mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-400/20 bg-emerald-400/10">
+                  <BarChart2 size={16} className="text-emerald-300" />
                 </div>
-                <span className="font-bold text-slate-900 text-lg">ROOKNOMICS</span>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-[#7A7A7A]">Secure Access</p>
+                  <span className="text-lg font-bold text-[#EAEAEA]">ROOKNOMICS</span>
+                </div>
               </div>
               {!isVerified && (
                 <button
                   onClick={onClose}
                   disabled={isOtpLoading}
-                  className="text-slate-400 hover:text-slate-600 transition-colors p-1 disabled:opacity-40"
+                  className="rounded-lg border border-[#1A1A1A] bg-[#111111] p-2 text-[#7A7A7A] transition-colors hover:border-[#2A2A2A] hover:text-[#EAEAEA] disabled:opacity-40"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               )}
             </div>
 
             {isVerified ? (
-              /* ── SUCCESS STATE ───────────────────────────── */
-              <div className="text-center py-6">
-                <div className="otp-success-icon flex justify-center mb-4">
-                  <CheckCircle2 size={64} className="text-emerald-500" strokeWidth={1.5} />
-                </div>
-                <h2 className="text-xl font-bold text-slate-900 mb-2">Email Verified!</h2>
-                <p className="text-slate-500 text-sm">
-                  Your account has been created successfully.<br />Redirecting you now…
+              <div className="py-6 text-center">
+                <motion.div
+                  initial={{ scale: 0.88, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  className="mb-4 flex justify-center"
+                >
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border border-emerald-400/20 bg-emerald-400/10">
+                    <CheckCircle2 size={36} className="text-emerald-300" strokeWidth={1.5} />
+                  </div>
+                </motion.div>
+                <h2 className="mb-2 text-2xl font-bold text-[#EAEAEA]">Email verified</h2>
+                <p className="text-sm text-[#7A7A7A]">
+                  Your account has been created successfully.
+                  <br />
+                  Redirecting you now...
                 </p>
               </div>
-
             ) : (
-              /* ── VERIFICATION FORM ───────────────────────── */
               <>
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
-                    <ShieldCheck size={20} className="text-indigo-600" />
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10">
+                    <ShieldCheck size={18} className="text-emerald-300" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900 leading-tight">Verify your email</h2>
-                    <p className="text-slate-500 text-xs mt-0.5">
-                      We sent a 6-digit code to{' '}
-                      <span className="font-semibold text-slate-700">{maskedEmail}</span>
+                    <h2 className="text-2xl font-bold text-[#EAEAEA]">Verify your email</h2>
+                    <p className="mt-1 text-sm text-[#7A7A7A]">
+                      We sent a 6-digit code to <span className="font-medium text-[#EAEAEA]">{maskedEmail}</span>
                     </p>
                   </div>
                 </div>
 
-                {/* 6 OTP inputs */}
-                <div className="flex justify-between gap-2 mb-4">
-                  {otp.map((digit, i) => (
+                <AnimatePresence>
+                  {displayError && (
+                    <motion.div
+                      key="otp-error"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.18 }}
+                      className="mb-4 flex items-start gap-2 rounded-xl border border-rose-400/20 bg-rose-400/5 px-4 py-3"
+                    >
+                      <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-rose-300" />
+                      <p className="text-xs leading-relaxed text-rose-200">{displayError}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="mb-5 grid grid-cols-6 gap-2">
+                  {otp.map((digit, index) => (
                     <input
-                      key={i}
-                      ref={el => { inputRefs.current[i] = el; }}
+                      key={index}
+                      ref={(el) => {
+                        inputRefs.current[index] = el;
+                      }}
                       type="text"
                       inputMode="numeric"
                       maxLength={1}
                       value={digit}
-                      onChange={e => handleChange(i, e.target.value)}
-                      onKeyDown={e => handleKeyDown(i, e)}
+                      onChange={(e) => handleChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e)}
                       onPaste={handlePaste}
                       disabled={isOtpLoading}
                       className={[
-                        'w-full aspect-square text-center text-xl font-bold rounded-xl border-2',
-                        'outline-none transition-all duration-150 select-none',
+                        'aspect-square w-full rounded-xl border text-center text-xl font-semibold outline-none transition-all duration-150',
                         displayError
-                          ? 'border-rose-400 bg-rose-50 text-rose-700'
+                          ? 'border-rose-400/40 bg-rose-400/5 text-rose-200'
                           : digit
-                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                            : 'border-slate-200 bg-slate-50 text-slate-800 focus:border-indigo-400 focus:bg-white',
-                        isOtpLoading ? 'opacity-60 cursor-not-allowed' : '',
+                            ? 'border-emerald-400/40 bg-emerald-400/10 text-[#EAEAEA]'
+                            : 'border-[#1A1A1A] bg-[#111111] text-[#EAEAEA] focus:border-emerald-400/40 focus:bg-[#141414]',
+                        isOtpLoading ? 'cursor-not-allowed opacity-60' : '',
                       ].join(' ')}
-                      style={{ maxWidth: '3.2rem' }}
                     />
                   ))}
                 </div>
 
-                {/* Error */}
-                {displayError && (
-                  <p className="text-rose-600 text-xs text-center mb-3">{displayError}</p>
-                )}
-
-                {/* Verify button */}
                 <button
                   onClick={handleManualVerify}
-                  disabled={isOtpLoading || otp.some(d => !d)}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition-all duration-300 text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={isOtpLoading || otp.some((digit) => !digit)}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 py-3 text-sm font-semibold text-emerald-300 transition-all duration-200 hover:scale-[1.01] hover:border-emerald-400/35 hover:bg-emerald-400/15 hover:text-emerald-200 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isOtpLoading ? (
                     <>
-                      <Loader2 size={15} className="animate-spin" />
-                      Verifying…
+                      <Loader2 size={16} className="animate-spin" />
+                      Verifying...
                     </>
-                  ) : 'Verify & Continue'}
+                  ) : (
+                    'Verify & Continue'
+                  )}
                 </button>
 
-                {/* Resend row */}
-                <div className="flex items-center justify-center gap-1.5 mt-5 text-xs text-slate-500">
-                  <span>Didn't receive the code?</span>
+                <div className="mt-5 text-center text-xs text-[#6E6E6E]">
+                  <span>Didn't receive the code? </span>
                   {canResend ? (
                     <button
                       onClick={handleResend}
                       disabled={isResendLoading}
-                      className="text-indigo-600 font-semibold hover:text-indigo-700 transition-colors flex items-center gap-1 disabled:opacity-50"
+                      className="inline-flex items-center gap-1 font-medium text-emerald-300 transition-colors hover:text-emerald-200 disabled:opacity-50"
                     >
                       {isResendLoading ? (
                         <>
                           <RefreshCw size={11} className="animate-spin" />
-                          Sending…
+                          Sending...
                         </>
-                      ) : 'Resend'}
+                      ) : (
+                        'Resend'
+                      )}
                     </button>
                   ) : (
-                    <span className="text-slate-400">
-                      Resend in{' '}
-                      <span className="font-semibold text-slate-600 tabular-nums">
-                        {resendTimer}s
-                      </span>
-                    </span>
+                    <span className="font-medium text-[#7A7A7A]">Resend in {resendTimer}s</span>
                   )}
                 </div>
               </>
             )}
-
           </div>
-        </div>
+        </motion.div>
       </div>
-    </>
+    </AnimatePresence>
   );
 }
