@@ -1449,39 +1449,39 @@ function NewsView({ setCurrentView }: any) {
   return (
     <>
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <h1 className="text-3xl font-bold text-slate-900">Market News</h1>
-        <p className="text-slate-600 mt-1">Live updates and company-specific headlines.</p>
+        <h1 className="text-3xl font-bold text-slate-100">Market News</h1>
+        <p className="text-slate-400 mt-1">Live updates and company-specific headlines.</p>
 
         {/* Ticker Search Bar */}
-        <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 w-full max-w-md flex items-center gap-3 mt-4 mb-8 relative shadow-sm hover:border-indigo-300 transition-colors focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100">
+        <div className="bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 w-full max-w-md flex items-center gap-3 mt-4 mb-8 relative shadow-[0_14px_40px_rgba(0,0,0,0.25)] hover:border-emerald-500/40 transition-colors focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/10">
           <Search size={18} className="text-slate-500" />
           <input
-            className="bg-transparent text-slate-800 placeholder-slate-400 outline-none w-full text-sm font-medium"
+            className="bg-transparent text-slate-100 placeholder-slate-500 outline-none w-full text-sm font-medium"
             placeholder="Search by ticker — AAPL, TSLA, SPY..."
             value={searchInput}
             onChange={handleInputChange}
           />
           {searchInput && (
-            <button onClick={clearSearch} className="text-slate-400 hover:text-slate-600 p-1 flex-shrink-0 transition-colors">
+            <button onClick={clearSearch} className="text-slate-500 hover:text-slate-200 p-1 flex-shrink-0 transition-colors">
               <X size={16} />
             </button>
           )}
         </div>
 
         {/* Feed Mode Indicator & Labels */}
-        <div className="flex justify-between items-end mb-6 border-b border-slate-200/60 pb-3 mt-4">
+        <div className="flex justify-between items-end mb-6 border-b border-slate-800/80 pb-3 mt-4">
           <div>
             <div className="flex items-center gap-2">
               {!activeTicker ? (
                 <>
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
-                  <h2 className="text-lg font-bold text-slate-900">General Market News</h2>
+                  <h2 className="text-lg font-bold text-slate-100">General Market News</h2>
                 </>
               ) : (
-                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  Showing news for: <span className="text-indigo-600">{activeTicker}</span>
+                <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                  Showing news for: <span className="text-emerald-400">{activeTicker}</span>
                   {!loading && news && (
-                    <span className="bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-bold ml-1 border border-indigo-100 shadow-sm">
+                    <span className="bg-emerald-500/10 text-emerald-300 text-xs px-2.5 py-1 rounded-full font-bold ml-1 border border-emerald-500/20 shadow-sm">
                       {news.length} {news.length === 1 ? 'article' : 'articles'}
                     </span>
                   )}
@@ -1498,20 +1498,20 @@ function NewsView({ setCurrentView }: any) {
 
         {/* MAIN CONTENT AREA */}
         {error ? (
-          <div className="bg-white border border-rose-200 rounded-2xl p-8 max-w-lg mx-auto text-center mt-12 shadow-sm relative overflow-hidden">
+          <div className="bg-slate-950 border border-rose-500/20 rounded-2xl p-8 max-w-lg mx-auto text-center mt-12 shadow-[0_20px_60px_rgba(0,0,0,0.35)] relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-rose-500" />
-            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 bg-rose-500/10 text-rose-300 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
               <AlertTriangle size={24} />
             </div>
-            <h3 className="text-slate-900 font-bold text-lg mb-2">Couldn't load news right now</h3>
-            <p className="text-slate-600 text-sm mb-6 bg-slate-50 inline-block px-4 py-2 rounded-lg font-mono border border-slate-100">{error}</p>
+            <h3 className="text-slate-100 font-bold text-lg mb-2">Couldn't load news right now</h3>
+            <p className="text-slate-300 text-sm mb-6 bg-slate-900 inline-block px-4 py-2 rounded-lg font-mono border border-slate-800">{error}</p>
             <div>
-              <button onClick={refetch} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl text-sm font-medium transition-all shadow-md hover:shadow-lg active:scale-95">
+              <button onClick={refetch} className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-6 py-2 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg active:scale-95">
                 Try Again
               </button>
             </div>
             {news.length > 0 && (
-              <div className="mt-8 bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-800 text-sm font-medium flex items-center justify-center gap-2 shadow-inner">
+              <div className="mt-8 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-amber-200 text-sm font-medium flex items-center justify-center gap-2 shadow-inner">
                 <Activity size={16} />
                 Showing cached results below
               </div>
@@ -1524,9 +1524,9 @@ function NewsView({ setCurrentView }: any) {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="bg-white border border-slate-200/80 rounded-[2rem] overflow-hidden h-[420px] flex flex-col pt-0 shadow-sm relative">
-                <style>{'@keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } } .shimmer-bg { background: linear-gradient(90deg, #f8fafc 25%, #f1f5f9 50%, #f8fafc 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }'}</style>
-                <div className="h-48 w-full shimmer-bg border-b border-slate-100" />
+              <div key={i} className="bg-slate-950 border border-slate-800/90 rounded-[2rem] overflow-hidden h-[420px] flex flex-col pt-0 shadow-[0_20px_60px_rgba(0,0,0,0.28)] relative">
+                <style>{'@keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } } .shimmer-bg { background: linear-gradient(90deg, #020617 25%, #0f172a 50%, #020617 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }'}</style>
+                <div className="h-48 w-full shimmer-bg border-b border-slate-800" />
                 <div className="p-6 flex-1 flex flex-col justify-center gap-4">
                   <div className="flex justify-between items-center">
                     <div className="h-4 w-1/4 shimmer-bg rounded-full" />
@@ -1544,19 +1544,19 @@ function NewsView({ setCurrentView }: any) {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-20 bg-slate-50 border border-slate-200 rounded-[2rem] mt-6 shadow-inner"
+            className="text-center py-20 bg-slate-950 border border-slate-800 rounded-[2rem] mt-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]"
           >
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200 shadow-sm">
-              <Search size={28} className="text-slate-400" />
+            <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800 shadow-sm">
+              <Search size={28} className="text-slate-500" />
             </div>
-            <h3 className="text-slate-600 text-lg font-medium">
+            <h3 className="text-slate-200 text-lg font-medium">
               {activeTicker ? 'No recent news available for ' + activeTicker : 'No news available right now'}
             </h3>
             {activeTicker && (
               <p className="text-slate-500 text-sm mt-2 max-w-sm mx-auto">Try typing another ticker symbol or select from the quick picks above.</p>
             )}
             {activeTicker && (
-              <button onClick={clearSearch} className="mt-6 text-indigo-600 text-sm font-bold hover:text-indigo-800 transition-colors bg-white px-4 py-2 rounded-xl border border-indigo-100 shadow-sm">
+              <button onClick={clearSearch} className="mt-6 text-emerald-300 text-sm font-bold hover:text-emerald-200 transition-colors bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 shadow-sm">
                 Return to general market news
               </button>
             )}
@@ -1573,10 +1573,10 @@ function NewsView({ setCurrentView }: any) {
                 key={article.id}
                 variants={fadeUp}
                 onClick={() => window.open(article.url, '_blank')}
-                className="bg-white border border-slate-200/80 rounded-[2rem] hover:border-indigo-300 hover:shadow-xl transition-all duration-400 cursor-pointer group flex flex-col overflow-hidden relative"
+                className="bg-slate-950 border border-slate-800/90 rounded-[2rem] hover:border-emerald-500/40 hover:shadow-[0_24px_80px_rgba(0,0,0,0.38)] transition-all duration-400 cursor-pointer group flex flex-col overflow-hidden relative"
               >
                 {/* Thumbnail Image */}
-                <div className="h-48 w-full relative overflow-hidden bg-slate-100 flex-shrink-0 border-b border-slate-100">
+                <div className="h-48 w-full relative overflow-hidden bg-slate-900 flex-shrink-0 border-b border-slate-800">
                   {article.image ? (
                     <img
                       src={article.image}
@@ -1591,8 +1591,8 @@ function NewsView({ setCurrentView }: any) {
                     <div className="w-full h-full" style={{ background: getPlaceholderGradient(article.source) }} />
                   )}
                   {/* Source Badge */}
-                  <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.08)] border border-slate-100/50">
-                    <span className="text-[10px] font-bold text-slate-800 tracking-wider uppercase">{article.source}</span>
+                  <div className="absolute top-4 left-4 bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.25)] border border-slate-700/70">
+                    <span className="text-[10px] font-bold text-slate-100 tracking-wider uppercase">{article.source}</span>
                   </div>
                   {/* Hover External Link icon */}
                   <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 shadow-lg">
@@ -1600,33 +1600,33 @@ function NewsView({ setCurrentView }: any) {
                   </div>
                 </div>
 
-                <div className="p-6 flex-1 flex flex-col bg-gradient-to-br from-white to-slate-50/50">
+                <div className="p-6 flex-1 flex flex-col bg-gradient-to-br from-slate-950 via-slate-950 to-slate-900/80">
                   {/* Date & Category */}
                   <div className="flex justify-between items-center mb-4">
-                    <span className="text-slate-500 text-xs font-semibold tracking-wide flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                    <span className="text-slate-400 text-xs font-semibold tracking-wide flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
                       {formatNewsDate(article.datetime)}
                     </span>
-                    <span className="bg-indigo-50 text-indigo-700 text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-sm border border-indigo-100/50">
+                    <span className="bg-emerald-500/10 text-emerald-300 text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-sm border border-emerald-500/20">
                       {article.category}
                     </span>
                   </div>
 
                   {/* Headline */}
-                  <h3 className="text-lg font-bold text-slate-900 mb-3 leading-snug line-clamp-2 group-hover:text-indigo-700 transition-colors duration-300" title={article.headline}>
+                  <h3 className="text-lg font-bold text-slate-100 mb-3 leading-snug line-clamp-2 group-hover:text-emerald-300 transition-colors duration-300" title={article.headline}>
                     {article.headline}
                   </h3>
 
                   {/* Summary */}
-                  <p className="text-slate-600 text-sm leading-relaxed flex-1 line-clamp-3">
+                  <p className="text-slate-400 text-sm leading-relaxed flex-1 line-clamp-3">
                     {article.summary}
                   </p>
 
                   {/* Related Ticker Pill at bottom */}
                   {article.related && (
-                    <div className="mt-5 pt-4 border-t border-slate-200/60 flex flex-wrap gap-2">
+                    <div className="mt-5 pt-4 border-t border-slate-800/80 flex flex-wrap gap-2">
                       {article.related.split(',').slice(0, 3).map(ticker => (
-                        <span key={ticker} className="bg-emerald-50 text-emerald-700 border border-emerald-100/50 text-[10px] uppercase tracking-widest px-2.5 py-1 rounded font-bold shadow-sm">
+                        <span key={ticker} className="bg-slate-900 text-emerald-300 border border-emerald-500/15 text-[10px] uppercase tracking-widest px-2.5 py-1 rounded font-bold shadow-sm">
                           {ticker.trim()}
                         </span>
                       ))}
