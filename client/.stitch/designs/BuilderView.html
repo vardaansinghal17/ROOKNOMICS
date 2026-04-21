@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Synthetic Horizon | Strategy Builder</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Manrope:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error": "#490006",
+              "on-secondary": "#005a10",
+              "primary": "#81ecff",
+              "inverse-on-surface": "#52555c",
+              "surface-bright": "#282c36",
+              "on-tertiary-fixed": "#3a0001",
+              "error-container": "#9f0519",
+              "on-surface-variant": "#a9abb3",
+              "surface": "#0b0e14",
+              "secondary-fixed": "#00fc40",
+              "background": "#0b0e14",
+              "primary-fixed": "#00e3fd",
+              "surface-container-high": "#1c2028",
+              "surface-tint": "#81ecff",
+              "on-background": "#ecedf6",
+              "secondary": "#00fc40",
+              "surface-container": "#161a21",
+              "on-secondary-fixed-variant": "#006513",
+              "primary-container": "#00e3fd",
+              "surface-dim": "#0b0e14",
+              "tertiary-fixed-dim": "#ff7c6c",
+              "tertiary-container": "#f9362c",
+              "secondary-fixed-dim": "#00ec3b",
+              "on-primary-container": "#004d57",
+              "tertiary-dim": "#e2241f",
+              "secondary-container": "#006e16",
+              "error-dim": "#d7383b",
+              "on-secondary-container": "#e6ffdc",
+              "secondary-dim": "#00ec3b",
+              "on-primary-fixed-variant": "#005762",
+              "on-tertiary-fixed-variant": "#7a0004",
+              "outline-variant": "#45484f",
+              "tertiary": "#ff7162",
+              "error": "#ff716c",
+              "surface-variant": "#22262f",
+              "on-secondary-fixed": "#00440a",
+              "on-primary-fixed": "#003840",
+              "primary-dim": "#00d4ec",
+              "inverse-surface": "#f9f9ff",
+              "tertiary-fixed": "#ff9385",
+              "on-primary": "#005762",
+              "surface-container-highest": "#22262f",
+              "on-error-container": "#ffa8a3",
+              "surface-container-low": "#10131a",
+              "inverse-primary": "#006976",
+              "surface-container-lowest": "#000000",
+              "primary-fixed-dim": "#00d4ec",
+              "on-tertiary": "#4a0001",
+              "outline": "#73757d",
+              "on-surface": "#ecedf6",
+              "on-tertiary-container": "#000000"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .glass-panel {
+        background: rgba(34, 38, 47, 0.4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .ghost-border {
+        border: 1px solid rgba(69, 72, 79, 0.15);
+      }
+      input[type=range] {
+        -webkit-appearance: none;
+        background: transparent;
+      }
+      input[type=range]::-webkit-slider-runnable-track {
+        background: rgba(69, 72, 79, 0.3);
+        height: 4px;
+        border-radius: 2px;
+      }
+      input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 14px;
+        width: 14px;
+        border-radius: 50%;
+        background: #81ecff;
+        margin-top: -5px;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(129, 236, 255, 0.4);
+      }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary/30 min-h-screen">
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 w-full z-50 bg-[#0b0e14]/60 backdrop-blur-xl border-b border-[#45484f]/15 shadow-2xl shadow-black/40 flex justify-between items-center px-8 h-16">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black tracking-tighter text-[#ecedf6] font-headline">Synthetic Horizon</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="font-headline tracking-tight text-sm uppercase font-bold text-[#81ecff] border-b-2 border-[#81ecff] pb-1" href="#">Strategy Builder</a>
+<a class="font-headline tracking-tight text-sm uppercase font-bold text-[#a9abb3] hover:text-[#ecedf6] transition-colors" href="#">Backtest History</a>
+<a class="font-headline tracking-tight text-sm uppercase font-bold text-[#a9abb3] hover:text-[#ecedf6] transition-colors" href="#">Portfolio</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-[#a9abb3] hover:bg-[#282c36]/50 rounded-lg transition-all active:scale-95 duration-150">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-[#a9abb3] hover:bg-[#282c36]/50 rounded-lg transition-all active:scale-95 duration-150">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/30">
+<img alt="User Profile Avatar" data-alt="professional portrait of a tech executive with focused expression, neutral background, studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoQlEtIvkSYLD0L9LilD9knBJz6ssujtm63gwuIMq2vLROzeptyicAOEiNl-c-OXStQ940GmODWIpzlJa5Nk9V6--utbBUUnEiP8OSl9d7l9RI8-Rj-P7Ol9T48Aw-XYpkm-4dr-K4vb2gjUQGJPIpAGFlrQriudJCoHgW4gnPbqPUWTM1_B1YmINR0ca94RsGsRtWKi0QIvqg98ojeC5zordeAu9au_BwW0ZhsaKi7mnkl5IKOWfg-4aLqDWWP2d_9rZdFtFkJkE"/>
+</div>
+</div>
+</nav>
+<main class="pt-24 pb-12 px-8 flex gap-8">
+<!-- Left Side Navigation (Settings Tabs) -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-[#10131a]/80 backdrop-blur-lg border-r border-[#45484f]/15 flex flex-col py-6 gap-2">
+<div class="px-6 mb-4">
+<h3 class="text-[#81ecff] font-headline font-bold text-lg">Strategy Settings</h3>
+<p class="text-on-surface-variant text-xs font-medium">Configuration Engine</p>
+</div>
+<div class="flex flex-col gap-1">
+<div class="bg-[#1c2028] text-[#81ecff] rounded-lg mx-2 flex items-center px-4 py-3 cursor-pointer">
+<span class="material-symbols-outlined mr-3 text-xl">show_chart</span>
+<span class="font-medium text-sm">Stock Selection</span>
+</div>
+<div class="text-[#a9abb3] hover:bg-[#1c2028]/50 mx-2 rounded-lg flex items-center px-4 py-3 cursor-pointer transition-all">
+<span class="material-symbols-outlined mr-3 text-xl">calendar_today</span>
+<span class="font-medium text-sm">Date Range</span>
+</div>
+<div class="text-[#a9abb3] hover:bg-[#1c2028]/50 mx-2 rounded-lg flex items-center px-4 py-3 cursor-pointer transition-all">
+<span class="material-symbols-outlined mr-3 text-xl">timeline</span>
+<span class="font-medium text-sm">RSI Parameters</span>
+</div>
+<div class="text-[#a9abb3] hover:bg-[#1c2028]/50 mx-2 rounded-lg flex items-center px-4 py-3 cursor-pointer transition-all">
+<span class="material-symbols-outlined mr-3 text-xl">insights</span>
+<span class="font-medium text-sm">Moving Average</span>
+</div>
+<div class="text-[#a9abb3] hover:bg-[#1c2028]/50 mx-2 rounded-lg flex items-center px-4 py-3 cursor-pointer transition-all">
+<span class="material-symbols-outlined mr-3 text-xl">security</span>
+<span class="font-medium text-sm">Risk Management</span>
+</div>
+</div>
+<div class="mt-auto px-4">
+<button class="w-full py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-transform duration-150">
+                    Run Backtest
+                </button>
+</div>
+</aside>
+<!-- Main Workspace (Canvas) -->
+<div class="ml-64 mr-72 flex-1 space-y-8">
+<!-- Header & Stock Selection -->
+<div class="glass-panel ghost-border rounded-2xl p-8">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h1 class="font-headline text-3xl font-extrabold text-on-background tracking-tight">Strategy Builder</h1>
+<p class="text-on-surface-variant mt-1">Design and validate algorithmic trading models.</p>
+</div>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-surface-bright rounded-full text-xs font-bold text-secondary flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> Live Engine
+                        </span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Stock Symbol</label>
+<div class="relative">
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline" placeholder="AAPL, TSLA, MSFT..." type="text"/>
+<span class="absolute right-4 top-3 text-primary material-symbols-outlined">search</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Start Date</label>
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20 transition-all" type="date"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">End Date</label>
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/20 transition-all" type="date"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Bento Grid Strategy Blocks -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- RSI Module -->
+<div class="glass-panel ghost-border rounded-2xl p-6 flex flex-col gap-6">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">timeline</span>
+</div>
+<h4 class="font-headline font-bold text-lg">Relative Strength Index</h4>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="space-y-6">
+<div class="space-y-3">
+<div class="flex justify-between">
+<span class="text-sm font-medium text-on-surface-variant">Period</span>
+<span class="text-sm font-bold text-primary">14</span>
+</div>
+<input class="w-full" max="100" min="2" type="range" value="14"/>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div class="space-y-3">
+<div class="flex justify-between">
+<span class="text-sm font-medium text-on-surface-variant">Buy Below</span>
+<span class="text-sm font-bold text-secondary">30</span>
+</div>
+<input class="w-full" max="50" min="10" type="range" value="30"/>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between">
+<span class="text-sm font-medium text-on-surface-variant">Sell Above</span>
+<span class="text-sm font-bold text-tertiary">70</span>
+</div>
+<input class="w-full" max="90" min="50" type="range" value="70"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Moving Average Module -->
+<div class="glass-panel ghost-border rounded-2xl p-6 flex flex-col gap-6">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">insights</span>
+</div>
+<h4 class="font-headline font-bold text-lg">Moving Average</h4>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+<div class="space-y-6 opacity-40">
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Type</label>
+<select class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-2 text-on-surface focus:ring-0">
+<option>Exponential (EMA)</option>
+<option>Simple (SMA)</option>
+</select>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between">
+<span class="text-sm font-medium text-on-surface-variant">Short Period</span>
+<span class="text-sm font-bold text-secondary">20</span>
+</div>
+<input class="w-full" disabled="" max="50" min="5" type="range" value="20"/>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between">
+<span class="text-sm font-medium text-on-surface-variant">Long Period</span>
+<span class="text-sm font-bold text-secondary">200</span>
+</div>
+<input class="w-full" disabled="" max="200" min="50" type="range" value="200"/>
+</div>
+</div>
+</div>
+<!-- Risk Management Module -->
+<div class="lg:col-span-2 glass-panel ghost-border rounded-2xl p-6">
+<div class="flex justify-between items-center mb-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">security</span>
+</div>
+<h4 class="font-headline font-bold text-lg">Risk Management</h4>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tertiary"></div>
+</label>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+<div class="space-y-4">
+<div class="flex justify-between">
+<div class="flex items-center gap-2">
+<span class="text-sm font-medium text-on-surface-variant">Stop-Loss</span>
+<span class="material-symbols-outlined text-xs text-tertiary">trending_down</span>
+</div>
+<span class="text-sm font-bold text-tertiary">2.5%</span>
+</div>
+<input class="w-full" max="20" min="0.5" step="0.5" type="range" value="2.5"/>
+<p class="text-[10px] text-outline italic">Maximum loss per trade relative to entry price.</p>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between">
+<div class="flex items-center gap-2">
+<span class="text-sm font-medium text-on-surface-variant">Take-Profit</span>
+<span class="material-symbols-outlined text-xs text-secondary">trending_up</span>
+</div>
+<span class="text-sm font-bold text-secondary">7.5%</span>
+</div>
+<input class="w-full" max="50" min="1" step="0.5" type="range" value="7.5"/>
+<p class="text-[10px] text-outline italic">Target gain per trade relative to entry price.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Side Execution Panel -->
+<aside class="fixed right-0 top-16 h-[calc(100vh-64px)] w-72 bg-[#10131a]/80 backdrop-blur-lg border-l border-[#45484f]/15 flex flex-col py-6 px-4">
+<div class="mb-6">
+<h3 class="text-[#81ecff] font-headline font-bold text-lg">Execution</h3>
+<p class="text-on-surface-variant text-xs font-medium">Capital &amp; Risk</p>
+</div>
+<div class="space-y-8 mb-8">
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Initial Capital</span>
+<span class="text-sm font-bold text-on-surface">$25,000</span>
+</div>
+<input class="w-full" max="100000" min="1000" step="1000" type="range" value="25000"/>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Commissions</span>
+<span class="text-sm font-bold text-on-surface">$5.00</span>
+</div>
+<input class="w-full" max="50" min="0" step="0.5" type="range" value="5"/>
+</div>
+</div>
+<div class="mt-4 p-4 rounded-xl bg-surface-container-high border border-outline-variant/10 space-y-4">
+<h5 class="text-xs font-bold uppercase text-[#81ecff] mb-2">Summary Overview</h5>
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<span class="text-xs text-on-surface-variant">Asset</span>
+<span class="text-xs font-bold text-on-surface">AAPL</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs text-on-surface-variant">Strategy</span>
+<span class="text-xs font-bold text-on-surface">RSI Mean Reversion</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs text-on-surface-variant">Active Filters</span>
+<span class="text-xs font-bold text-secondary">3 Active</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs text-on-surface-variant">Risk Level</span>
+<span class="text-xs font-bold text-tertiary">Moderate</span>
+</div>
+</div>
+</div>
+<div class="mt-auto flex flex-col gap-3">
+<button class="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-xl shadow-xl shadow-primary/20 active:scale-95 transition-transform duration-150">
+                    Run Backtest
+                </button>
+<button class="w-full py-3 bg-transparent border border-outline-variant/30 text-on-surface-variant font-medium rounded-xl hover:bg-surface-bright transition-all">
+                    Reset Configuration
+                </button>
+</div>
+</aside>
+</main>
+<!-- Aesthetic Floating Elements -->
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-surface-container-highest/80 backdrop-blur-md border border-white/5 rounded-full z-40">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Real-time Data Stream Active</span>
+</div>
+</body></html>

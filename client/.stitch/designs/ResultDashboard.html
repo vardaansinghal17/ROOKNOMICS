@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina Quant | Backtest Results</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-low": "#10131a",
+                        "tertiary-fixed-dim": "#ff7c6c",
+                        "on-secondary-fixed-variant": "#006513",
+                        "surface-container-lowest": "#000000",
+                        "surface-dim": "#0b0e14",
+                        "surface-variant": "#22262f",
+                        "surface-container-high": "#1c2028",
+                        "secondary-fixed": "#00fc40",
+                        "error-dim": "#d7383b",
+                        "secondary-dim": "#00ec3b",
+                        "on-tertiary": "#4a0001",
+                        "background": "#0b0e14",
+                        "primary-container": "#00e3fd",
+                        "on-secondary-container": "#e6ffdc",
+                        "outline": "#73757d",
+                        "on-primary": "#005762",
+                        "error": "#ff716c",
+                        "surface-tint": "#81ecff",
+                        "on-secondary": "#005a10",
+                        "tertiary": "#ff7162",
+                        "primary-dim": "#00d4ec",
+                        "on-tertiary-fixed-variant": "#7a0004",
+                        "on-primary-fixed-variant": "#005762",
+                        "outline-variant": "#45484f",
+                        "on-surface-variant": "#a9abb3",
+                        "on-error": "#490006",
+                        "surface": "#0b0e14",
+                        "primary-fixed-dim": "#00d4ec",
+                        "surface-bright": "#282c36",
+                        "on-tertiary-fixed": "#3a0001",
+                        "primary-fixed": "#00e3fd",
+                        "inverse-on-surface": "#52555c",
+                        "tertiary-dim": "#e2241f",
+                        "tertiary-fixed": "#ff9385",
+                        "on-tertiary-container": "#000000",
+                        "secondary": "#00fc40",
+                        "primary": "#81ecff",
+                        "surface-container": "#161a21",
+                        "tertiary-container": "#f9362c",
+                        "on-surface": "#ecedf6",
+                        "secondary-fixed-dim": "#00ec3b",
+                        "secondary-container": "#006e16",
+                        "surface-container-highest": "#22262f",
+                        "inverse-surface": "#f9f9ff",
+                        "on-error-container": "#ffa8a3",
+                        "inverse-primary": "#006976",
+                        "on-secondary-fixed": "#00440a",
+                        "on-primary-fixed": "#003840",
+                        "on-primary-container": "#004d57",
+                        "on-background": "#ecedf6",
+                        "error-container": "#9f0519"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        body {
+            background-color: #0b0e14;
+            color: #ecedf6;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#0b0e14]/60 backdrop-blur-xl flex justify-between items-center h-16 px-8 w-full bg-[#1c2028]/10 border-b border-[#45484f]/15 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]">
+<div class="text-2xl font-black tracking-tighter text-[#ecedf6] font-['Manrope']">
+            Lumina Quant
+        </div>
+<div class="hidden md:flex items-center gap-8 font-['Manrope'] font-bold tracking-tight">
+<a class="text-[#a9abb3] hover:text-[#ecedf6] transition-colors active:scale-95 transition-transform" href="#">Strategy Builder</a>
+<a class="text-[#81ecff] border-b-2 border-[#81ecff] pb-1 active:scale-95 transition-transform" href="#">Backtest History</a>
+<a class="text-[#a9abb3] hover:text-[#ecedf6] transition-colors active:scale-95 transition-transform" href="#">Portfolio</a>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative group hidden sm:block">
+<span class="material-symbols-outlined text-[#a9abb3] absolute left-3 top-1/2 -translate-y-1/2 text-sm" data-icon="search">search</span>
+<input class="bg-[#1c2028] border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-[#81ecff] w-48 transition-all" placeholder="Search strategies..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-[#a9abb3]">
+<span class="material-symbols-outlined cursor-pointer hover:text-[#ecedf6] transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-[#ecedf6] transition-colors" data-icon="settings">settings</span>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full border border-[#45484f]/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxIez7i-FO80STCbdE4iKEPFI0dsw8q34909KUjRNQFlhVbI5QiP6Nog34zxKTSufEZkYIjFI8WgiLzwZv3ws98dIkJiWi6cs38-fM-cFNKnICIc-QdEaUT6LeyUpxAItp9VCQgYftdlADo0BHeiPUbo7XamZUZbEj69DyM_8KaDIv15QyVbk4ymHBERSNEPt_kJUGVm3erASE5LO4tQ6r02HTnK8sJ8RbBEENGaL2sXe6S-yqhoM4vMSPL8DI5N5nBIg7QDn3Ytw"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Mobile) -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-[#10131a] flex flex-col py-6 border-r border-[#45484f]/15 hidden md:flex">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-[#81ecff]/10 flex items-center justify-center text-[#81ecff]">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</div>
+<div>
+<div class="text-lg font-bold text-[#ecedf6] font-['Inter']">Alpha Engine</div>
+<div class="text-[10px] text-[#81ecff] font-bold uppercase tracking-widest">v2.4 Active</div>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="bg-[#81ecff]/10 text-[#81ecff] rounded-lg mx-2 flex items-center gap-3 px-4 py-3 cursor-pointer transition-all font-['Inter'] text-sm font-medium">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</div>
+<div class="text-[#a9abb3] hover:text-[#ecedf6] hover:bg-[#1c2028] transition-colors rounded-lg mx-2 flex items-center gap-3 px-4 py-3 cursor-pointer transition-all font-['Inter'] text-sm font-medium">
+<span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+<span>Analytics</span>
+</div>
+<div class="text-[#a9abb3] hover:text-[#ecedf6] hover:bg-[#1c2028] transition-colors rounded-lg mx-2 flex items-center gap-3 px-4 py-3 cursor-pointer transition-all font-['Inter'] text-sm font-medium">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span>Signals</span>
+</div>
+<div class="text-[#a9abb3] hover:text-[#ecedf6] hover:bg-[#1c2028] transition-colors rounded-lg mx-2 flex items-center gap-3 px-4 py-3 cursor-pointer transition-all font-['Inter'] text-sm font-medium">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span>Log</span>
+</div>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full bg-gradient-to-r from-[#81ecff] to-[#00e3fd] text-[#004d57] font-bold py-3 rounded-lg text-sm active:scale-95 transition-all shadow-lg shadow-[#00e3fd]/20">
+                Deploy Strategy
+            </button>
+<div class="mt-4 text-[#a9abb3] hover:text-[#ecedf6] transition-colors flex items-center gap-3 px-4 py-3 cursor-pointer text-sm font-medium">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span>Support</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 pt-24 pb-12 px-8 min-h-screen bg-surface">
+<div class="max-w-7xl mx-auto space-y-8">
+<!-- Verdict Banner -->
+<div class="relative overflow-hidden rounded-xl bg-surface-variant/60 glass-panel border border-[#81ecff]/20 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="absolute top-0 right-0 w-64 h-64 bg-secondary/5 blur-[100px] -mr-32 -mt-32"></div>
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div>
+<h1 class="font-headline font-extrabold text-2xl tracking-tight text-on-surface">OUTPERFORMANCE DETECTED</h1>
+<p class="text-on-surface-variant font-body">Strategy beat S&amp;P 500 benchmark by <span class="text-secondary font-bold">+4.2%</span> during the test period.</p>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2.5 bg-surface-bright rounded-lg text-sm font-bold border border-outline-variant/15 hover:bg-surface-variant transition-all">View Full Logs</button>
+<button class="px-6 py-2.5 bg-gradient-to-r from-primary to-primary-container text-on-primary-container rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all">Optimize Strategy</button>
+</div>
+</div>
+<!-- Summary Metric Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Card 1 -->
+<div class="bg-surface-container-high rounded-xl p-6 border border-outline-variant/5">
+<div class="flex justify-between items-start mb-4">
+<span class="text-on-surface-variant text-xs font-bold uppercase tracking-widest">Your Return</span>
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="trending_up">trending_up</span>
+</div>
+<div class="font-headline font-extrabold text-4xl text-secondary">28.5%</div>
+<div class="mt-2 text-[10px] text-on-surface-variant font-medium">Annualized Return: 12.4%</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-high rounded-xl p-6 border border-outline-variant/5">
+<div class="flex justify-between items-start mb-4">
+<span class="text-on-surface-variant text-xs font-bold uppercase tracking-widest">Index Return</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="analytics">analytics</span>
+</div>
+<div class="font-headline font-extrabold text-4xl text-on-surface">24.3%</div>
+<div class="mt-2 text-[10px] text-on-surface-variant font-medium">S&amp;P 500 TR Benchmark</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-high rounded-xl p-6 border border-outline-variant/5">
+<div class="flex justify-between items-start mb-4">
+<span class="text-on-surface-variant text-xs font-bold uppercase tracking-widest">Max Drawdown</span>
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="keyboard_double_arrow_down">keyboard_double_arrow_down</span>
+</div>
+<div class="font-headline font-extrabold text-4xl text-tertiary">-12.1%</div>
+<div class="mt-2 text-[10px] text-on-surface-variant font-medium">Recovery Time: 42 Days</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-high rounded-xl p-6 border border-outline-variant/5">
+<div class="flex justify-between items-start mb-4">
+<span class="text-on-surface-variant text-xs font-bold uppercase tracking-widest">Total Trades</span>
+<span class="material-symbols-outlined text-primary text-sm" data-icon="swap_horiz">swap_horiz</span>
+</div>
+<div class="font-headline font-extrabold text-4xl text-on-surface">142</div>
+<div class="mt-2 text-[10px] text-on-surface-variant font-medium">Win Rate: 68.4%</div>
+</div>
+</div>
+<!-- Main Comparative Chart Section -->
+<section class="bg-surface-container-low rounded-xl p-8 border border-outline-variant/10">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+<div>
+<h2 class="font-headline font-bold text-xl text-on-surface">Portfolio vs S&amp;P 500 Over Time</h2>
+<p class="text-sm text-on-surface-variant">Performance comparison from Jan 2023 - Dec 2023</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="text-xs font-bold text-on-surface">Alpha Engine v2.4</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-outline"></span>
+<span class="text-xs font-bold text-on-surface-variant">S&amp;P 500 Index</span>
+</div>
+</div>
+</div>
+<!-- Mock Chart Visualization -->
+<div class="h-80 relative w-full flex items-end gap-1 group">
+<!-- BenchMark Line (Visualized through a background SVG or CSS path simulation) -->
+<div class="absolute inset-0 flex items-center pointer-events-none opacity-20">
+<svg class="w-full h-full" preserveaspectratio="none">
+<path d="M0 200 Q 200 180, 400 150 T 800 120 T 1200 80" fill="none" stroke="#a9abb3" stroke-width="2"></path>
+<path d="M0 220 Q 250 160, 500 140 T 750 100 T 1200 40" fill="none" stroke="#81ecff" stroke-width="3"></path>
+</svg>
+</div>
+<!-- Chart Grid Lines -->
+<div class="absolute inset-0 grid grid-rows-4 pointer-events-none">
+<div class="border-b border-outline-variant/10"></div>
+<div class="border-b border-outline-variant/10"></div>
+<div class="border-b border-outline-variant/10"></div>
+<div class="border-b border-outline-variant/10"></div>
+</div>
+<!-- X-Axis Labels -->
+<div class="absolute -bottom-8 left-0 w-full flex justify-between text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">
+<span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+</div>
+<!-- Aesthetic Gradient Overlay -->
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent pointer-events-none h-1/4 bottom-0"></div>
+</div>
+</section>
+<!-- Bottom Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Heat Map / Trade Distribution -->
+<div class="bg-surface-container-high rounded-xl p-8 border border-outline-variant/5">
+<h3 class="font-headline font-bold text-lg mb-6">When You Traded</h3>
+<div class="grid grid-cols-7 gap-2">
+<!-- Simulated Calendar Heatmap -->
+<div class="space-y-2" v-for="i in 5">
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-secondary-dim/40"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-secondary-container"></div>
+<div class="aspect-square rounded bg-secondary-fixed"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+</div>
+<!-- Repeated for visual effect -->
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-secondary-dim/20"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-secondary-container/60"></div>
+<div class="aspect-square rounded bg-secondary-fixed/80"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-secondary-dim/40"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-secondary-container"></div>
+<div class="aspect-square rounded bg-secondary-fixed"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-secondary-dim/20"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-secondary-container/60"></div>
+<div class="aspect-square rounded bg-secondary-fixed/80"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-secondary-dim/40"></div>
+<div class="aspect-square rounded bg-surface-bright/50"></div>
+<div class="aspect-square rounded bg-secondary-container"></div>
+</div>
+<div class="mt-6 flex items-center justify-between">
+<div class="text-[10px] text-on-surface-variant font-bold">MON → SUN</div>
+<div class="flex items-center gap-1">
+<span class="text-[10px] text-on-surface-variant uppercase font-bold mr-2">Intensity</span>
+<div class="w-3 h-3 rounded bg-surface-bright"></div>
+<div class="w-3 h-3 rounded bg-secondary-container"></div>
+<div class="w-3 h-3 rounded bg-secondary-fixed"></div>
+</div>
+</div>
+</div>
+<!-- Performance Deep Dive / Sector Exposure -->
+<div class="bg-surface-container-high rounded-xl p-8 border border-outline-variant/5">
+<h3 class="font-headline font-bold text-lg mb-6">Performance Deep Dive</h3>
+<div class="space-y-6">
+<div class="group cursor-default">
+<div class="flex justify-between items-end mb-2">
+<span class="text-sm font-bold">Tech Growth (QQQ)</span>
+<span class="text-sm text-secondary">+14.2%</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[85%] rounded-full shadow-[0_0_8px_rgba(0,252,64,0.3)]"></div>
+</div>
+</div>
+<div class="group cursor-default">
+<div class="flex justify-between items-end mb-2">
+<span class="text-sm font-bold">Energy Sector</span>
+<span class="text-sm text-tertiary">-3.1%</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[30%] rounded-full shadow-[0_0_8px_rgba(255,113,98,0.3)]"></div>
+</div>
+</div>
+<div class="group cursor-default">
+<div class="flex justify-between items-end mb-2">
+<span class="text-sm font-bold">Financials</span>
+<span class="text-sm text-on-surface-variant">+2.4%</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-on-surface-variant w-[55%] rounded-full"></div>
+</div>
+</div>
+<div class="group cursor-default">
+<div class="flex justify-between items-end mb-2">
+<span class="text-sm font-bold">Health Care</span>
+<span class="text-sm text-secondary">+8.8%</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[65%] rounded-full shadow-[0_0_8px_rgba(0,252,64,0.3)]"></div>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-outline-variant/10 flex justify-between">
+<div>
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Sharp Ratio</div>
+<div class="text-lg font-bold text-primary">1.84</div>
+</div>
+<div class="text-right">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Profit Factor</div>
+<div class="text-lg font-bold text-secondary">2.12</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual Floating Action Button -->
+<button class="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-container text-on-primary shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined text-3xl" data-icon="rocket_launch">rocket_launch</span>
+</button>
+</body></html>
